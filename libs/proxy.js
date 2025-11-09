@@ -161,6 +161,18 @@ module.exports = (mapper, serverPort) => {
         clientSocket.destroy();
       }
     });
+
+    clientSocket.on('close', function() {
+      if (serverSocket && !serverSocket.destroyed) {
+        serverSocket.destroy();
+      }
+    });
+
+    serverSocket.on('close', function() {
+      if (clientSocket && !clientSocket.destroyed) {
+        clientSocket.destroy();
+      }
+    });
   });
 
   proxyServer.on('clientError', (err, clientSocket) => {
