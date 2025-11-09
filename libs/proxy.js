@@ -9,7 +9,13 @@ module.exports = (mapper, serverPort) => {
   function httpOptions(clientReq, clientRes) {
     var reqUrl = new URL(clientReq.url);
     console.log('proxy for http request: ' + reqUrl.href);
-    const { hostname, port } = proxyMap(mapper, reqUrl)
+
+    // Create plain object for proxyMap
+    var urlInfo = {
+      hostname: reqUrl.hostname,
+      port: reqUrl.port || (reqUrl.protocol === 'https:' ? 443 : 80)
+    };
+    const { hostname, port } = proxyMap(mapper, urlInfo)
 
     var options = {
       hostname: hostname,
@@ -48,7 +54,13 @@ module.exports = (mapper, serverPort) => {
   proxyServer.on('connect', (clientReq, clientSocket, head) => {
     var reqUrl = new URL('https://' + clientReq.url);
     console.log('proxy for https request: ' + reqUrl.href + '(path encrypted by ssl)');
-    const { hostname, port } = proxyMap(mapper, reqUrl)
+
+    // Create plain object for proxyMap
+    var urlInfo = {
+      hostname: reqUrl.hostname,
+      port: reqUrl.port || 443
+    };
+    const { hostname, port } = proxyMap(mapper, urlInfo)
 
     var options = {
       port: port,

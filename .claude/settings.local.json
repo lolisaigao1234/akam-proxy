@@ -11,7 +11,10 @@
       "Bash(taskkill:*)",
       "Bash(powershell.exe \"Stop-Process -Id 18760 -Force\")",
       "WebFetch(domain:ping.chinaz.com)",
-      "Bash(powershell.exe \"Stop-Process -Id 39944 -Force\")"
+      "Bash(powershell.exe \"Stop-Process -Id 39944 -Force\")",
+      "Bash(nslookup:*)",
+      "Bash(powershell.exe \"Get-Content ''I:\\Software\\akam-proxy\\akam-proxy\\ip_list.txt'' | Measure-Object -Line\")",
+      "Bash(ping:*)"
     ],
     "deny": [],
     "ask": []
