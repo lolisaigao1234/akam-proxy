@@ -52,3 +52,11 @@ options.js
 yarn.lock
 # ide file
 .idea
+
+# vibe coding
+.claude
+.conda
+CLAUDE_files
+readme_files
+*.html
+prompt.md
