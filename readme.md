@@ -25,8 +25,8 @@ This project is designed to optimize video streaming from Bilibili by intelligen
     ```
 
 4.  **Verify startup**: You should see output similar to this, confirming the server is running and has selected an optimal IP:
-    ```
-    Loaded 77 IP addresses from ip_list.txt
+    ```shell
+    Loaded 77 IP addresses from ip_list.txt \\
     To update IPs manually, use the python script[python\akamTester-master\akamTester.py].
     Pinging ipList
     forward proxy server started, listening on port 2689
