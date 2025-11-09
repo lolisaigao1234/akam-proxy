@@ -25,7 +25,7 @@ function refreshBest(ipList) {
 }
 
 function refreshIpList() {
-    chinazPing(config.host, {times: config.refreshIpList.retry.time, interval: config.refreshIpList.retry.interval})
+    chinazPing(config.host, {retryTime: config.refreshIpList.retry.times, waittingInterval: config.refreshIpList.retry.interval})
     .then(res => {
         const sumIpList = Array.from(
             new Set(
