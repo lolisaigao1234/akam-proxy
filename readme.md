@@ -38,7 +38,7 @@ This project is designed to optimize video streaming from Bilibili by intelligen
 
 ## ZeroOmega Configuration
 
-To correctly use this proxy, you should configure a browser extension like [ZeroOmega](https://github.com/zero-peak/ZeroOmega) or SwitchyOmega to only proxy requests for the specific CDN domain. This avoids sending all your browser traffic through the proxy.
+To correctly use this proxy, you should configure a browser extension like [ZeroOmega](https://github.com/zero-peak/ZeroOmega) or [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega) to only proxy requests for the specific CDN domain. This avoids sending all your browser traffic through the proxy.
 
 1.  **Create a new proxy profile** in the extension's options:
     *   **Profile Name**: `akam-proxy` (or any name you prefer)
