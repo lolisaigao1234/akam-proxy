@@ -272,6 +272,11 @@ proxy request: upos-hz-mirrorakam.akamaized.net:443 => 67.69.196.154:443
 - Also fix `config.refreshIpList.retry.time` to `config.refreshIpList.retry.times` in index.js:28
 ```
 
+3. Error:
+```shell
+client socket error: Error: write ECONNABORTED
+```
+
 Help me to fix these errors and make the project running.
 
 Update teh CLAUDE.md file accordingly.
