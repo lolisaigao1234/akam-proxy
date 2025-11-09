@@ -170,7 +170,8 @@ module.exports = (mapper, serverPort) => {
     console.error('Error Code:', err.code);
     console.error('Error Name:', err.name);
     console.error('Error Message:', err.message);
-    console.error('Error rawPacket (first 200 bytes):', err.rawPacket ? err.rawPacket.toString('utf8', 0, Math.min(200, err.rawPacket.length)) : 'N/A');
+    // Log as hex for better binary debugging
+    console.error('Error rawPacket (first 100 bytes as hex):', err.rawPacket ? err.rawPacket.toString('hex', 0, Math.min(100, err.rawPacket.length)) : 'N/A');
     console.error('Full Error Stack:');
     console.error(err.stack);
     console.error('Socket remote address:', clientSocket.remoteAddress);
