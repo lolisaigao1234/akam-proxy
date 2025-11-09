@@ -1,6 +1,5 @@
 var net = require('net');
 var http = require('http');
-var url = require('url');
 var proxyMap = require('./proxy-map');
 
 module.exports = (mapper, serverPort) => {
@@ -8,14 +7,14 @@ module.exports = (mapper, serverPort) => {
 
   // handle http proxy requests
   function httpOptions(clientReq, clientRes) {
-    var reqUrl = url.parse(clientReq.url);
+    var reqUrl = new URL(clientReq.url);
     console.log('proxy for http request: ' + reqUrl.href);
-    const { hostname, port } = proxyMap(reqUrl)
+    const { hostname, port } = proxyMap(mapper, reqUrl)
 
     var options = {
       hostname: hostname,
       port: port,
-      path: reqUrl.path,
+      path: reqUrl.pathname + reqUrl.search,
       method: clientReq.method,
       headers: clientReq.headers
     };
@@ -47,7 +46,7 @@ module.exports = (mapper, serverPort) => {
 
   // handle https proxy requests (CONNECT method)
   proxyServer.on('connect', (clientReq, clientSocket, head) => {
-    var reqUrl = url.parse('https://' + clientReq.url);
+    var reqUrl = new URL('https://' + clientReq.url);
     console.log('proxy for https request: ' + reqUrl.href + '(path encrypted by ssl)');
     const { hostname, port } = proxyMap(mapper, reqUrl)
 

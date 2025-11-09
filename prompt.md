@@ -3,45 +3,27 @@ Now for this project, you are a senior nodejs developer. You are given a project
 Errors occurred when I ran the project:
 1.
 ```shell
+(base) PS I:\Software\akam-proxy\akam-proxy> npm start
+
+> akam-proxy@1.0.0 start
+> node index
+
+forward proxy server started, listening on port 2689
+chinaz servers count: 0
+WARNING: chinaz.com HTML structure may have changed
+No server list found with selector "#speedlist .listw"
+IP discovery disabled. Using existing ip_list.txt
+To manually update IPs, use: nslookup upos-hz-mirrorakam.akamaized.net
+available servers count: 75
+Pinging ipList
+save chinaz results successfully
+The best server is 67.69.196.154 which delay is 16.654666666666667ms
+client error: Error: Parse Error: Invalid method encountered
+client error: Error: Parse Error: Invalid method encountered
+client error: Error: Parse Error: Invalid method encountered
+client error: Error: Parse Error: Invalid method encountered
+client error: Error: Parse Error: Invalid method encountered
 client error: Error: Parse Error: Invalid method encountered
 ```
 
-I think the problem exists when I try to proxy a request to the internet. Now it is bricking every single request to bilibili.com. Help me to fix the problem. Update the CLAUDE.md file accordingly.
-
-Also, please update the @utils/chinazPing.js and @utils/getGoodServer.js files to use the new api. The old api does not work anymore.
-The code
-```javascript
-      const serverList = $('#speedlist .listw')
-```
-is not working anymore. Please update the code to use the new api. The server list is empty. However, from the result of https://tool.chinaz.com/speedworld/www.bilibili.com, we can see the server list is not empty. 
-```Shell
----------- Tracert Result ----------
-
-Domain: www.bilibili.com
-
-Detection result:
-
-1     38.12.36.1     美国加利福尼亚圣何塞 Cogent     1.74ms
-
-2     192.168.0.58     本地局域网     6.26ms
-
-3     10.255.254.8     本地局域网     1.45ms
-
-4     10.255.254.82     本地局域网     2.03ms
-
-5     223.119.66.61     中国香港移动     3.27ms
-
-6     223.120.6.69     中国香港移动     2.84ms
-
-7     223.120.6.9     中国香港移动     14.51ms
-
-8     223.120.6.18     中国香港移动     10.17ms
-
-9     223.119.66.114     中国香港移动     9.76ms
-
-10     192.254.84.91     美国     15.23ms
-
-11     172.22.64.77     本地局域网     14.78ms
-
-12     192.254.90.179     美国加利福尼亚洛杉矶      14.6ms
-```
+I think the ip_list.txt file is not updated. Please update the ip_list.txt file to the latest ip addresses. Use the nslookup command to get the latest ip addresses. Though I can ping the address such as 67.69.196.154, I am not sure if that address is still associated with bilibili.com or under its cdn addresses. Please also update the CLAUDE.md file accordingly. 

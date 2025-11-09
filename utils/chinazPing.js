@@ -3,7 +3,17 @@ const cheerio = require('cheerio')
 const json5 = require('json5')
 const { retry } = require('async')
 
-
+/**
+ * Attempts to discover IP addresses by scraping chinaz.com ping service
+ *
+ * NOTE: As of 2025, chinaz.com changed from static HTML to dynamic JavaScript
+ * with encrypted tokens. The old selector-based approach may not work anymore.
+ * If this returns empty results, manually update ip_list.txt with IPs from:
+ * - DNS queries: nslookup or dig commands
+ * - Alternative tools: https://tool.chinaz.com/speedworld/
+ *
+ * The proxy will continue to work with the existing ip_list.txt file.
+ */
 function chinazPing (host, options) {
     return new Promise((resolve, reject) => {
         request.get('https://ping.chinaz.com/' + host)
@@ -17,6 +27,17 @@ function chinazPing (host, options) {
             const serverList = $('#speedlist .listw')
 
             console.log(`chinaz servers count: ${serverList.length}`)
+
+            // Check if chinaz.com structure changed
+            if (serverList.length === 0) {
+                console.warn('WARNING: chinaz.com HTML structure may have changed')
+                console.warn('No server list found with selector "#speedlist .listw"')
+                console.warn('IP discovery disabled. Using existing ip_list.txt')
+                console.warn('To manually update IPs, use: nslookup ' + host)
+                // Return empty array to fall back to existing IP list
+                resolve([])
+                return
+            }
 
             const taskList = []
 

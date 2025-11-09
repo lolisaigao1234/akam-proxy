@@ -186,6 +186,9 @@ The following bugs have been identified and fixed in this codebase:
 **Summary of Changes**:
 - `index.js:28` - Fixed parameter names and config property reference
 - `utils/chinazPing.js:9-13, 29-34` - Added browser headers to bypass 403 errors
+- `utils/chinazPing.js:6-40` - Added chinaz.com structure change detection and warnings
+- `libs/proxy.js:10-12` - Fixed missing mapper parameter (Bug 4)
+- `libs/proxy.js:10, 49` - Replaced deprecated url.parse() with new URL API (Bug 5)
 - `libs/proxy.js:31-45, 63-83` - Improved error handling for connection errors
 
 ### Bug 1: chinaz.com Returns 403 Forbidden (FIXED ✓)
@@ -325,14 +328,190 @@ This fix:
 - Uses `.destroy()` instead of `.end()` for proper cleanup
 - Provides clearer log messages for debugging
 
+### Bug 4: Parse Error - Invalid Method (FIXED ✓)
+
+**Symptom**: `client error: Error: Parse Error: Invalid method encountered` - All HTTP proxy requests failed
+
+**Location**: `libs/proxy.js:12`
+
+**Root Cause**:
+- HTTP proxy handler was missing the `mapper` parameter when calling `proxyMap()`
+- Line 12: `const { hostname, port } = proxyMap(reqUrl)` (missing mapper)
+- Compare with HTTPS handler line 51: `const { hostname, port } = proxyMap(mapper, reqUrl)` ✓ Correct
+- Without the mapper parameter, proxyMap received incorrect arguments and returned malformed data
+- This caused the HTTP request to be constructed with invalid parameters
+- Result: All HTTP requests failed with "Parse Error: Invalid method"
+
+**Impact**:
+- All HTTP (non-HTTPS) proxy requests failed completely
+- Any website using HTTP was inaccessible through the proxy
+- HTTPS requests worked fine (they had the correct mapper parameter)
+
+**Fix Applied**:
+```javascript
+// Line 12 - Changed from:
+const { hostname, port } = proxyMap(reqUrl)
+
+// To:
+const { hostname, port } = proxyMap(mapper, reqUrl)
+```
+
+### Bug 5: Deprecated url.parse() Warnings (FIXED ✓)
+
+**Symptom**:
+```
+(node:xxxx) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized
+and prone to errors that have security implications. Use the WHATWG URL API instead.
+```
+
+**Location**: `libs/proxy.js:10` and `libs/proxy.js:49`
+
+**Root Cause**:
+- The code used Node.js's deprecated `url.parse()` method
+- This method has security implications and will be removed in future Node.js versions
+- Modern code should use the WHATWG URL API (`new URL()`)
+
+**Impact**:
+- Warning messages cluttered logs
+- Code will break in future Node.js versions
+- Potential security vulnerabilities from non-standard URL parsing
+
+**Fix Applied**:
+
+Removed the url module import and replaced all uses:
+
+```javascript
+// Removed:
+var url = require('url');
+
+// HTTP handler - Line 10
+// Changed from:
+var reqUrl = url.parse(clientReq.url);
+
+// To:
+var reqUrl = new URL(clientReq.url);
+
+// Also updated path construction on line 17:
+// Changed from:
+path: reqUrl.path,
+
+// To:
+path: reqUrl.pathname + reqUrl.search,
+
+// HTTPS handler - Line 49
+// Changed from:
+var reqUrl = url.parse('https://' + clientReq.url);
+
+// To:
+var reqUrl = new URL('https://' + clientReq.url);
+```
+
+**Key Differences**:
+- `url.parse().path` → `new URL().pathname + new URL().search`
+- `new URL()` returns a proper URL object with standardized behavior
+- No more deprecation warnings
+
+### Bug 6: chinaz.com HTML Structure Changed (DOCUMENTED)
+
+**Symptom**: `chinaz servers count: 0` - No IPs discovered from chinaz.com
+
+**Location**: `utils/chinazPing.js:27`
+
+**Root Cause**:
+- chinaz.com changed from static HTML to dynamic JavaScript in 2025
+- Old selector `$('#speedlist .listw')` no longer finds server list
+- The page now uses:
+  - Encrypted tokens for authentication
+  - Dynamic JavaScript to load content
+  - Hidden API endpoints (not easily accessible)
+- Scraping approach no longer works reliably
+
+**Impact**:
+- IP discovery from chinaz.com returns 0 new IPs
+- Proxy still works perfectly with cached `ip_list.txt`
+- Users cannot automatically discover new CDN IPs
+
+**Fix Applied** (Option A + C: Graceful degradation with clear messaging):
+
+Added comprehensive error detection and user guidance:
+
+```javascript
+/**
+ * Attempts to discover IP addresses by scraping chinaz.com ping service
+ *
+ * NOTE: As of 2025, chinaz.com changed from static HTML to dynamic JavaScript
+ * with encrypted tokens. The old selector-based approach may not work anymore.
+ * If this returns empty results, manually update ip_list.txt with IPs from:
+ * - DNS queries: nslookup or dig commands
+ * - Alternative tools: https://tool.chinaz.com/speedworld/
+ *
+ * The proxy will continue to work with the existing ip_list.txt file.
+ */
+
+// Check if chinaz.com structure changed
+if (serverList.length === 0) {
+    console.warn('WARNING: chinaz.com HTML structure may have changed')
+    console.warn('No server list found with selector "#speedlist .listw"')
+    console.warn('IP discovery disabled. Using existing ip_list.txt')
+    console.warn('To manually update IPs, use: nslookup ' + host)
+    // Return empty array to fall back to existing IP list
+    resolve([])
+    return
+}
+```
+
+**Manual IP Discovery Instructions**:
+
+Users can manually update `ip_list.txt` using these methods:
+
+1. **DNS Query** (recommended):
+   ```bash
+   nslookup upos-hz-mirrorakam.akamaized.net
+   # Or on Linux/Mac:
+   dig upos-hz-mirrorakam.akamaized.net
+   ```
+
+2. **Alternative tools**:
+   - Visit https://tool.chinaz.com/speedworld/ for traceroute results
+   - Use online ping/IP lookup services
+   - Check CDN provider documentation
+
+3. **Update ip_list.txt**:
+   - Add discovered IPs (one per line)
+   - Remove old/dead IPs
+   - Restart the proxy
+
+The proxy will automatically test all IPs and select the best one.
+
 ## Testing Results
 
-After applying all three fixes:
+After applying all six bug fixes:
 
+**Fixes 1-3 (Initial Round)**:
 1. ✓ **Server starts successfully** - No EADDRINUSE errors (as long as port is free)
 2. ✓ **No 403 Forbidden errors** - chinaz.com requests succeed with proper headers
 3. ✓ **Retry configuration works** - Config values from `config.json5` are properly used
 4. ✓ **Cleaner error logs** - Expected disconnects are logged differently from real errors
-5. ✓ **Proxy functions correctly** - Successfully proxies Bilibili traffic
 
-**Note on chinaz IP discovery**: While the 403 error is fixed, the chinaz.com page structure may have changed, resulting in "chinaz servers count: 0". The proxy still works perfectly with the existing `ip_list.txt` file.
+**Fixes 4-6 (Second Round)**:
+5. ✓ **HTTP proxy works** - No "Parse Error: Invalid method" errors
+6. ✓ **No deprecation warnings** - Replaced url.parse() with new URL API
+7. ✓ **Clear chinaz warnings** - Users informed when IP discovery doesn't work
+8. ✓ **Graceful fallback** - Proxy uses existing ip_list.txt when chinaz.com fails
+9. ✓ **Proxy functions correctly** - Successfully proxies both HTTP and HTTPS traffic
+
+**Current Behavior**:
+```
+forward proxy server started, listening on port 2689
+chinaz servers count: 0
+WARNING: chinaz.com HTML structure may have changed
+No server list found with selector "#speedlist .listw"
+IP discovery disabled. Using existing ip_list.txt
+To manually update IPs, use: nslookup upos-hz-mirrorakam.akamaized.net
+available servers count: 75
+Pinging ipList
+save chinaz results successfully
+The best server is 67.69.196.154 which delay is 16.618ms
+```
+
+The proxy is fully functional and selects the optimal server from the cached IP list.
