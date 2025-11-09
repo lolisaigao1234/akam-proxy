@@ -102,7 +102,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p><strong>Install dependencies</strong>: Clone or download this project, and in the project directory, run: <code>bash     npm install</code></p></li>
 <li><p><strong>Verify configuration</strong>: Check <code>config.json5</code> to ensure the port (default: 2689) is available.</p></li>
 <li><p><strong>Start the proxy server</strong>: <code>bash     npm start</code></p></li>
-<li><p><strong>Verify startup</strong>: You should see output similar to this, confirming the server is running and has selected an optimal IP: <code>Loaded 77 IP addresses from ip_list.txt     To update IPs manually, use: nslookup upos-hz-mirrorakam.akamaized.net     Pinging ipList     forward proxy server started, listening on port 2689     The best server is 2.16.11.163 which delay is 88.2417ms</code></p></li>
+<li><p><strong>Verify startup</strong>: You should see output similar to this, confirming the server is running and has selected an optimal IP:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Loaded</span> 77 IP addresses from ip_list.txt </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">To</span> update IPs manually, use the python script located at python/akamTester-master/akamTester.py.</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">Pinging</span> ipList</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">forward</span> proxy server started, listening on port 2689</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">The</span> best server is 2.16.11.163 which delay is 88.2417ms</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p><strong>Configure browser</strong>: Set up a browser proxy extension to use the server. See the ZeroOmega Configuration section for a detailed example.</p></li>
 </ol>
 </section>
@@ -126,6 +132,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 This configuration ensures that only requests to the Bilibili CDN are routed through this proxy, while all other traffic is unaffected.</li>
 </ol>
+<p>Screenshots of the ZeroOmega configuration: <img src="screenshots/ZeroOmega_Configuration.png" class="img-fluid" alt="ZeroOmega Configuration"> <img src="screenshots/ZeroOmega_Configuration_2.png" class="img-fluid" alt="ZeroOmega Configuration"></p>
 </section>
 <section id="ip-address-management" class="level2">
 <h2 class="anchored" data-anchor-id="ip-address-management">IP Address Management</h2>
@@ -133,7 +140,7 @@ This configuration ensures that only requests to the Bilibili CDN are routed thr
 <section id="manual-update" class="level3">
 <h3 class="anchored" data-anchor-id="manual-update">Manual Update</h3>
 <p>You can quickly update <code>ip_list.txt</code> using DNS query tools like <code>nslookup</code> or <code>dig</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">nslookup</span> upos-hz-mirrorakam.akamaized.net</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">nslookup</span> upos-hz-mirrorakam.akamaized.net</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Copy the resulting IP addresses into <code>ip_list.txt</code> (one IP per line) and restart the proxy server.</p>
 </section>
 <section id="using-akamtester-recommended" class="level3">

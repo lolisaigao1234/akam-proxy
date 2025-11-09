@@ -25,11 +25,12 @@ This project is designed to optimize video streaming from Bilibili by intelligen
     ```
 
 4.  **Verify startup**: You should see output similar to this, confirming the server is running and has selected an optimal IP:
-    ```shell
-    Loaded 77 IP addresses from ip_list.txt \\
-    To update IPs manually, use the python script[python\akamTester-master\akamTester.py].
+    ```bash
+    Loaded 77 IP addresses from ip_list.txt 
+    To update IPs manually, use the python script located at python/akamTester-master/akamTester.py.
     Pinging ipList
     forward proxy server started, listening on port 2689
+
     The best server is 2.16.11.163 which delay is 88.2417ms
     ```
 
@@ -52,6 +53,10 @@ To correctly use this proxy, you should configure a browser extension like [Zero
     *   **Profile**: Select the `akam-proxy` profile you created.
 
     This configuration ensures that only requests to the Bilibili CDN are routed through this proxy, while all other traffic is unaffected.
+
+Screenshots of the ZeroOmega configuration:
+![ZeroOmega Configuration](screenshots/ZeroOmega_Configuration.png)
+![ZeroOmega Configuration](screenshots/ZeroOmega_Configuration_2.png)
 
 ## IP Address Management
 
