@@ -1,8 +1,6 @@
 const domains = [
-    'bilibili.com',
     'bilivideo.com',
     'akamaized.net',
-    'hdslb.com',
     'upos-hz-mirrorakam.akamaized.net',
     'upos-sz-mirrorcosov.bilivideo.com',
 ];
