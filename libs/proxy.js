@@ -68,7 +68,7 @@ module.exports = (mapper, serverPort) => {
 
     clientReq.on('error', (e) => {
       if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET') {
-        console.log('client disconnected: ' + e.message);
+        console.log('client disconnected inside clientReq.on: ' + e.message);
       } else {
         console.log('client socket error: ' + e);
       }
@@ -142,7 +142,7 @@ module.exports = (mapper, serverPort) => {
 
     clientSocket.on('error', (e) => {
       if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET') {
-        console.log("client disconnected: " + e.message);
+        console.log("client disconnected inside clientSocket.on: " + e.message);
       } else {
         console.log("client socket error: " + e);
       }
