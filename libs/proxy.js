@@ -29,11 +29,19 @@ module.exports = (mapper, serverPort) => {
     clientReq.pipe(serverConnection);
 
     clientReq.on('error', (e) => {
-      console.log('client socket error: ' + e);
+      if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET') {
+        console.log('client disconnected: ' + e.message);
+      } else {
+        console.log('client socket error: ' + e);
+      }
     });
 
     serverConnection.on('error', (e) => {
-      console.log('server connection error: ' + e);
+      if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET') {
+        console.log('server disconnected: ' + e.message);
+      } else {
+        console.log('server connection error: ' + e);
+      }
     });
   }
 
@@ -61,13 +69,25 @@ module.exports = (mapper, serverPort) => {
     });
 
     clientSocket.on('error', (e) => {
-      console.log("client socket error: " + e);
-      serverSocket.end();
+      if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET') {
+        console.log("client disconnected: " + e.message);
+      } else {
+        console.log("client socket error: " + e);
+      }
+      if (serverSocket && !serverSocket.destroyed) {
+        serverSocket.destroy();
+      }
     });
 
     serverSocket.on('error', (e) => {
-      console.log("forward proxy server connection error: " + e);
-      clientSocket.end();
+      if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET') {
+        console.log("server disconnected: " + e.message);
+      } else {
+        console.log("forward proxy server connection error: " + e);
+      }
+      if (clientSocket && !clientSocket.destroyed) {
+        clientSocket.destroy();
+      }
     });
   });
 
