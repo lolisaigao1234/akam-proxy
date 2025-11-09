@@ -26,4 +26,4 @@ client error: Error: Parse Error: Invalid method encountered
 client error: Error: Parse Error: Invalid method encountered
 ```
 
-I think the ip_list.txt file is not updated. Please update the ip_list.txt file to the latest ip addresses. Use the nslookup command to get the latest ip addresses. Though I can ping the address such as 67.69.196.154, I am not sure if that address is still associated with bilibili.com or under its cdn addresses. Please also update the CLAUDE.md file accordingly. 
+Remove the @chinazPing.js method, as th website is no longer available. I think the ip_list.txt file is not updated. Please update the ip_list.txt file to the latest ip addresses. Use the nslookup command to get the latest ip addresses. Though I can ping the address such as 67.69.196.154, I am not sure if that address is still associated with bilibili.com or under its cdn addresses. Please also update the CLAUDE.md file accordingly. 
