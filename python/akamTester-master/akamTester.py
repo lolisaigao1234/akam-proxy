@@ -32,7 +32,7 @@ def normalize_host(host):
 
 def https_test(ip, host, port=443, max_retries=5):
     """
-    使用 TLS 握手模拟 HTTPS 体验：针对指定 IP 建立一个带有 SNI（host）的 SSL/TLS 连线，
+    使用 TLS 握手模拟 HTTPS 体验：针对指定 IP 建立一个带有 SNI(host)的 SSL/TLS 连线，
     测量从建立 TCP 连线到握手完成的总延迟（毫秒）。
     若失败则重试 max_retries 次。
     """
