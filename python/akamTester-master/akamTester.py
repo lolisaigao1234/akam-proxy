@@ -109,38 +109,37 @@ def process_host(host):
 
     print()
     if good_ips:
-        color_print('基于当前网络环境, 以下为 HTTPS 连接延迟低于200ms的IP', status=2)
+        color_print('Based on current network environment, the following IPs have HTTPS connection delay below 200ms', status=2)
         good_ips.sort(key=lambda x: x['delay'])
         with open(low_delay_ip_list_path, 'w', encoding='utf-8') as f:
             for item in good_ips:
-                color_print(f"{item['ip']}\tHTTPS连接延迟: {item['delay']:.1f} ms", status=2)
+                color_print(f"{item['ip']}\tHTTPS connection delay: {item['delay']:.1f} ms", status=2)
                 f.write(item['ip'] + ' ' + normalized_host + '\n')
     else:
         ip_info.sort(key=lambda x: x['delay'])
         num = min(3, len(ip_info))
-        color_print(f'本次测试未能找到 HTTPS 连接延迟低于200ms的IP! 以下为延迟最低的 {num} 个节点', status=1)
+        color_print(f'Could not find IPs with HTTPS connection delay below 200ms! The following are the {num} nodes with lowest delay', status=1)
         for i in range(num):
-            color_print(f"{ip_info[i]['ip']}\tHTTPS连接延迟: {ip_info[i]['delay']:.1f} ms", status=1)
+            color_print(f"{ip_info[i]['ip']}\tHTTPS connection delay: {ip_info[i]['delay']:.1f} ms", status=1)
 
     color_print("------------------------------------------------------------", status=2)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--user_hosts', '-u', nargs='+', 
-                        help='指定测试域名列表（空格分隔）',
+    parser.add_argument('--user_hosts', '-u', nargs='+',
+                        help='Specify test domain list (space-separated)',
                         default=['upos-sz-mirroraliov.bilivideo.com', 'upos-hz-mirrorakam.akamaized.net'],
                         required=False)
     args = parser.parse_args()
     hosts = args.user_hosts
 
-    version_msg = f'当前 akamTester 版本: {version}'
+    version_msg = f'Current akamTester version: {version}'
     color_print(version_msg, status=2)
 
     for host in hosts:
         process_host(host)
 
-    input('按回车退出')
     sys.exit(0)
 
 if __name__ == '__main__':
