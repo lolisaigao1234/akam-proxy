@@ -28,7 +28,7 @@
         /* 要测试的域名列表（akamTester支持多域名）
          * 目前只使用主域名以避免复杂性
          */
-        targetHosts: ['upos-hz-mirrorakam.akamaized.net'],
+        targetHosts: ['upos-hz-mirrorakam.akamaized.net', 'upos-sz-mirroraliov.bilivideo.com'],
 
         /* 是否将合并后的IP列表保存回ip_list.txt？
          * 这会在服务器重启后保留新发现的IP
