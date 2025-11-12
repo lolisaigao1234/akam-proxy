@@ -143,8 +143,9 @@ class AkamTesterRunner {
     async executePythonScript() {
         return new Promise((resolve, reject) => {
             // Build command arguments
+            // Since we set cwd to the script directory, we only need the filename
             const args = [
-                this.config.scriptPath,
+                'akamTester.py',
                 '-u',
                 ...this.config.targetHosts
             ];
