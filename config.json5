@@ -9,7 +9,7 @@
     /* akamTester 自动IP发现集成 */
     akamTester: {
         /* 启用/禁用自动IP发现（默认禁用以保持向后兼容） */
-        enabled: false,
+        enabled: true,
 
         /* 运行akamTester的间隔时间(s)
          * 推荐值: 900 (15分钟), 1800 (30分钟), 3600 (1小时)
