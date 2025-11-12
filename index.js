@@ -17,7 +17,11 @@ if (config.akamTester && config.akamTester.enabled) {
     console.log('║  akamTester Integration ENABLED                              ║');
     console.log('╚══════════════════════════════════════════════════════════════╝');
     console.log(`Discovery interval: ${config.akamTester.interval}s (${Math.floor(config.akamTester.interval / 60)} minutes)`);
-    console.log(`Python path: ${config.akamTester.pythonPath}`);
+    if (config.akamTester.condaEnv) {
+        console.log(`Python environment: Conda environment '${config.akamTester.condaEnv}'`);
+    } else {
+        console.log(`Python path: ${config.akamTester.pythonPath}`);
+    }
     console.log(`Target hosts: ${config.akamTester.targetHosts.join(', ')}`);
     console.log(`Max IPs: ${config.akamTester.maxIps}`);
     console.log('');
