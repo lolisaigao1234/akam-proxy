@@ -107,3 +107,12 @@ The project includes a powerful Python tool, `akamTester`, for discovering and t
     And more...
 
     Reconstructing the proxy-map.js to handle all the possible cdns.
+
+## Credits
+
+- [akamTester](https://github.com/miyouzi/akamTester)
+- [ZeroOmega](https://github.com/zero-peak/ZeroOmega)
+- [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega)
+- [Node.js](https://nodejs.org/)
+- [Python](https://www.python.org/)
+- [npm](https://www.npmjs.com/)
