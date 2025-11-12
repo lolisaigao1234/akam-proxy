@@ -5,6 +5,48 @@
     port: 2689,
     /* 重新查找最优节点的间隔时间(s) */
     refreshInterval: 3600,
+
+    /* akamTester 自动IP发现集成 */
+    akamTester: {
+        /* 启用/禁用自动IP发现（默认禁用以保持向后兼容） */
+        enabled: false,
+
+        /* 运行akamTester的间隔时间(s)
+         * 推荐值: 900 (15分钟), 1800 (30分钟), 3600 (1小时)
+         */
+        interval: 900,
+
+        /* Python可执行文件路径
+         * Windows: 'python' 或 'python3' 或 'C:\\Python312\\python.exe'
+         * Linux/Mac: 'python3' 或 '/usr/bin/python3'
+         */
+        pythonPath: 'python',
+
+        /* akamTester.py脚本路径（相对于项目根目录） */
+        scriptPath: 'python/akamTester-master/akamTester.py',
+
+        /* 要测试的域名列表（akamTester支持多域名）
+         * 目前只使用主域名以避免复杂性
+         */
+        targetHosts: ['upos-hz-mirrorakam.akamaized.net'],
+
+        /* 是否将合并后的IP列表保存回ip_list.txt？
+         * 这会在服务器重启后保留新发现的IP
+         */
+        saveToFile: true,
+
+        /* akamTester最大执行时间（毫秒）
+         * 如果执行时间过长则终止进程
+         */
+        timeout: 600000,  // 10分钟
+
+        /* IP池中保留的最大IP数量
+         * 防止无限增长
+         */
+        maxIps: 200
+    },
+
+    /* 以下为遗留设置（不再使用但保留以供参考） */
     refreshIpList: {
         /* 重新查找新增节点的间隔时间(s) */
         interval: 86400,
