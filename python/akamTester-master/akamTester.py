@@ -52,7 +52,7 @@ def https_test(ip, host, port=443, max_retries=5):
             break  # 成功连线则退出
         except Exception as e:
             attempts += 1
-    msg = f"{ip}\tHTTPS连接延迟: {delay:.1f} ms"
+    msg = f"{ip}\tHTTPS connection delay: {delay:.1f} ms"
     if delay < 200:
         color_print(msg, status=2)
     else:
@@ -67,33 +67,33 @@ def process_host(host):
     host_cache_file = os.path.join(working_dir, normalized_host + "_iplist.txt")
     low_delay_ip_list_path = os.path.join(working_dir, normalized_host + '.txt')
 
-    color_print(f"\n当前测试域名：{normalized_host}", status=2)
+    color_print(f"\nCurrent test domain: {normalized_host}", status=2)
     try:
         gd = GlobalDNS(normalized_host)
-        color_print('第一次解析:')
+        color_print('First DNS resolution:')
         ip_set = gd.get_ip_list()
 
-        # 額外多次解析以收集更多 IP（可根據需要調整次數）
+        # Additional resolutions to collect more IPs (adjust count as needed)
         extra_renew_times = 2
         for i in range(extra_renew_times):
-            color_print(f'第 {i+2} 次解析:')
+            color_print(f'DNS resolution #{i+2}:')
             gd.renew()
             ip_set.update(gd.get_ip_list())
     except Exception as e:
-        color_print(f'进行全球解析时遇到未知错误: {e}', status=1)
+        color_print(f'Unknown error during global DNS resolution: {e}', status=1)
         if os.path.exists(host_cache_file):
-            color_print('将读取本地保存的 IP 列表', status=1)
+            color_print('Reading locally saved IP list', status=1)
             with open(host_cache_file, 'r', encoding='utf-8') as f:
                 ip_set = set(line.strip() for line in f if line.strip())
         else:
-            color_print('没有本地保存的 IP 列表！程序终止！', status=1)
+            color_print('No locally saved IP list! Program terminated!', status=1)
             sys.exit(0)
     else:
         with open(host_cache_file, 'w', encoding='utf-8') as f:
             for ip in ip_set:
                 f.write(ip + '\n')
 
-    color_print(f'\n共取得 {len(ip_set)} 个 IP, 开始测试 HTTPS 连接延迟', status=2)
+    color_print(f'\nObtained {len(ip_set)} IPs, starting HTTPS connection delay testing', status=2)
 
     ip_info = []
     good_ips = []
