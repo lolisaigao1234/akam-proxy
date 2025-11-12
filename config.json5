@@ -19,8 +19,16 @@
         /* Python可执行文件路径
          * Windows: 'python' 或 'python3' 或 'C:\\Python312\\python.exe'
          * Linux/Mac: 'python3' 或 '/usr/bin/python3'
+         * 注意：如果使用conda环境，请设置condaEnv而不是pythonPath
          */
         pythonPath: 'python',
+
+        /* Conda环境名称（可选）
+         * 如果设置了此项，将使用 'conda run -n <env> python' 来运行脚本
+         * 示例: 'AKAMTester'
+         * 留空或null表示不使用conda环境
+         */
+        condaEnv: 'AKAMTester',
 
         /* akamTester.py脚本路径（相对于项目根目录） */
         scriptPath: 'python/akamTester-master/akamTester.py',
