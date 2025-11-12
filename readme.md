@@ -1,5 +1,7 @@
 # akam-proxy
 
+Note: This project is completely a result of vibe coding. Any bugs or issues should be reported to Cursor/Claude Code/GPT-5 Codex.
+
 A Node.js proxy server that automatically selects the optimal CDN node for Bilibili's overseas CDN (`upos-hz-mirrorakam.akamaized.net`) by testing latency and choosing the lowest-delay server.
 
 This project is designed to optimize video streaming from Bilibili by intelligently routing traffic to the fastest available Akamai CDN server.
