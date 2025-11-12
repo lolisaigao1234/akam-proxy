@@ -195,11 +195,16 @@ class AkamTesterRunner {
 
             console.log(`Working directory: ${cwd}`);
 
-            // Spawn the process
+            // Spawn the process with UTF-8 encoding to handle Chinese characters
             const pythonProcess = spawn(command, args, {
                 cwd: cwd,
                 shell: true,
-                windowsHide: true
+                windowsHide: true,
+                env: {
+                    ...process.env,
+                    PYTHONIOENCODING: 'utf-8',  // Force UTF-8 to handle Chinese output
+                    CONDA_NO_PLUGINS: 'true'    // Disable conda plugins to avoid interactive prompts
+                }
             });
 
             let stdout = '';
