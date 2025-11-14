@@ -130,6 +130,7 @@ Enable akamTester for hands-free operation:
 
 **Screenshots**:
 ![ZeroOmega Configuration](assets/screenshots/ZeroOmega_Configuration.png)
+![ZeroOmega Configuration](assets\screenshots\ZeroOmega_Configuration_2.png)
 
 ### Option 2: SwitchyOmega
 
