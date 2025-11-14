@@ -2,6 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Documentation Structure
+
+**For users and general documentation**, see:
+- **[Quick Start](docs/README.md)** - Installation and basic setup
+- **[Detailed Setup](docs/SETUP.md)** - Step-by-step configuration
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and components
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[API Reference](docs/API.md)** - Code documentation
+
+**This file (CLAUDE.md)** contains AI assistant-specific context, project conventions, and development notes that supplement the user-facing documentation.
+
 ## Project Overview
 
 akam-proxy is a Node.js proxy server that automatically selects the optimal CDN node for Bilibili's overseas CDN (upos-hz-mirrorakam.akamaized.net) by testing latency and choosing the lowest-delay server.
@@ -44,41 +55,61 @@ npm start
 ```
 
 ### Configuration
-- Configuration file: `config.json5` (JSON5 format)
-- IP list cache: `ip_list.txt` (local cache of available IP addresses)
-- The proxy will automatically start testing IPs and refreshing the optimal server selection
+- Configuration file: `config.json5` (JSON5 format, root directory)
+- Example configs: `config/default.json5`, `config/example.json5`
+- IP list: `data/ip_list.txt` (local cache of available IP addresses)
+- Validation: Automatic on startup via `src/utils/validators.js`
 
 ## Architecture
 
-### Core Components
+**Note**: For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-**Entry Point: `index.js`**
-- Loads configuration from `config.json5` using JSON5
-- Reads IP list from `ip_list.txt`
-- Manages periodic task: `refreshBest()` - Re-tests existing IPs to find the best server (every `refreshInterval` seconds, default 3600s)
-- Maintains a `best` object containing the current optimal server's host, average latency, and original host
-- Starts the proxy server via `proxy(best, config.port)`
+### Core Components (After Phase 1 & 2 Restructure)
 
-**Proxy Server: `libs/proxy.js`**
+**Entry Point: `index.js`** (24 lines)
+- Loads and validates configuration from `config.json5`
+- Creates `Server` instance
+- Handles graceful shutdown
+
+**Application Manager: `src/core/server.js`**
+- Coordinates all subsystems (IP pool, proxy, akamTester)
+- Manages periodic refresh and discovery timers
+- Initializes and starts all services
+
+**Proxy Server: `src/proxy/server.js`**
 - Creates HTTP/HTTPS proxy server using Node.js `http` and `net` modules
 - Handles HTTP requests via `httpOptions()` function
 - Handles HTTPS CONNECT requests via `connect` event listener
-- Uses `proxy-map.js` to map requests from specified domains to the optimal `host`
+- Uses `src/proxy/mapper.js` to map requests from specified domains to the optimal IP
 - Pipes client requests to destination servers and returns responses
 - Includes comprehensive debug logging (10-step for HTTP, 8-step for HTTPS)
 - Enhanced clientError handler with rawPacket debugging
 
-**Host Mapping: `libs/proxy-map.js`**
-- Maps incoming requests for specific domains (bilivideo.com, akamaized.net, etc.) to `mapper.host` (the optimal IP)
+**Host Mapping: `src/proxy/mapper.js`**
+- Maps incoming requests for specific domains (bilivideo.com, akamaized.net, etc.) to optimal IP
 - Supports multiple domains and subdomain matching
 - Logs proxy mappings when hostname is changed
 - Returns modified `{ hostname, port }` for connection
 
-**Server Testing: `utils/getGoodServer.js`**
+**IP Testing: `src/ip-management/tester.js`**
 - Tests latency of IP list using `tcp-ping` library
 - Pings each IP 3 times with 3 second timeout
 - Filters out dead IPs and sorts by average latency
 - Returns array of alive servers sorted by best latency
+
+**IP Pool Manager: `src/ip-management/ip-pool.js`**
+- Loads/saves IP list from `data/ip_list.txt`
+- Tracks failure counts per IP
+- Removes dead IPs after 5 consecutive failures
+- Merges new discoveries with deduplication
+- Enforces maximum pool size
+
+**akamTester Integration: `src/ip-management/akam-runner.js`**
+- Executes Python akamTester script in subprocess
+- Validates Python/conda environment
+- Parses output files
+- Handles timeouts and errors
+- Mutex protection against concurrent runs
 
 ### Data Flow
 
