@@ -31,7 +31,7 @@
         condaEnv: 'AKAMTester',
 
         /* akamTester.py脚本路径（相对于项目根目录） */
-        scriptPath: 'python/akamTester-master/akamTester.py',
+        scriptPath: 'tools/akamTester/akamTester.py',
 
         /* 要测试的域名列表（akamTester支持多域名）
          * 目前只使用主域名以避免复杂性
@@ -52,18 +52,5 @@
          * 防止无限增长
          */
         maxIps: 200
-    },
-
-    /* 以下为遗留设置（不再使用但保留以供参考） */
-    refreshIpList: {
-        /* 重新查找新增节点的间隔时间(s) */
-        interval: 86400,
-        /* 有关chinaz服务器节点的重试配置（除非你知道这是什么，否则请不要修改） */
-        retry: {
-            times: 50,
-            interval: 10000
-        }
-    },
-    /* 是否保存新增的节点 */
-    saveChinazResult: true,
+    }
 }
