@@ -166,7 +166,8 @@ class AkamTesterRunner {
     async executePythonScript() {
         return new Promise((resolve, reject) => {
             // Set working directory to akamTester directory
-            const cwd = path.join(__dirname, 'tools\akamTester\akamTester.py');
+            console.log(`Working directory: ${path.join(__dirname, "tools/akamTester")}`);
+            const cwd = path.join(__dirname, "tools/akamTester");
 
             // Build command and arguments based on conda or direct Python
             let command, args;
