@@ -78,7 +78,17 @@ class AkamTesterRunner {
     async validatePython() {
         try {
             const result = await new Promise((resolve, reject) => {
-                const pythonProcess = spawn(this.config.pythonPath, ['--version'], {
+                // If conda environment is specified, validate conda instead
+                let command, args;
+                if (this.config.condaEnv) {
+                    command = 'conda';
+                    args = ['run', '-n', this.config.condaEnv, 'python', '--version'];
+                } else {
+                    command = this.config.pythonPath;
+                    args = ['--version'];
+                }
+
+                const pythonProcess = spawn(command, args, {
                     windowsHide: true,
                     shell: true
                 });
@@ -115,14 +125,27 @@ class AkamTesterRunner {
 
             if (!result) {
                 console.error('╔══════════════════════════════════════════════════════════════╗');
-                console.error('║  Python executable not found                                 ║');
-                console.error('╚══════════════════════════════════════════════════════════════╝');
-                console.error(`Path: ${this.config.pythonPath}`);
-                console.error('');
-                console.error('Please install Python 3 or update akamTester.pythonPath in config.json5');
-                console.error('Examples:');
-                console.error('  - Windows: pythonPath: "python" or "C:\\\\Python312\\\\python.exe"');
-                console.error('  - Linux/Mac: pythonPath: "python3" or "/usr/bin/python3"');
+                if (this.config.condaEnv) {
+                    console.error('║  Conda environment not found or not accessible               ║');
+                    console.error('╚══════════════════════════════════════════════════════════════╝');
+                    console.error(`Conda environment: ${this.config.condaEnv}`);
+                    console.error('');
+                    console.error('Please verify:');
+                    console.error(`  1. Conda is installed and in PATH`);
+                    console.error(`  2. Environment '${this.config.condaEnv}' exists: conda env list`);
+                    console.error(`  3. Environment has Python installed`);
+                    console.error('');
+                    console.error('Or set condaEnv: null in config.json5 to use system Python');
+                } else {
+                    console.error('║  Python executable not found                                 ║');
+                    console.error('╚══════════════════════════════════════════════════════════════╝');
+                    console.error(`Path: ${this.config.pythonPath}`);
+                    console.error('');
+                    console.error('Please install Python 3 or update akamTester.pythonPath in config.json5');
+                    console.error('Examples:');
+                    console.error('  - Windows: pythonPath: "python" or "C:\\\\Python312\\\\python.exe"');
+                    console.error('  - Linux/Mac: pythonPath: "python3" or "/usr/bin/python3"');
+                }
                 console.error('');
                 console.error('Continuing with existing IP list...');
                 console.error('═══════════════════════════════════════════════════════════════');
@@ -157,14 +180,43 @@ class AkamTesterRunner {
                 ...this.config.targetHosts
             ];
 
-            console.log(`Running: ${this.config.pythonPath} ${args.join(' ')}`);
+            // Build command and arguments based on conda or direct Python
+            let command, args;
+            if (this.config.condaEnv) {
+                // Use conda run to execute in the specified environment
+                command = 'conda';
+                args = [
+                    'run',
+                    '-n', this.config.condaEnv,
+                    'python',
+                    'akamTester.py',
+                    '-u',
+                    ...this.config.targetHosts
+                ];
+                console.log(`Running: conda run -n ${this.config.condaEnv} python akamTester.py -u ${this.config.targetHosts.join(' ')}`);
+            } else {
+                // Use direct Python path
+                command = this.config.pythonPath;
+                args = [
+                    'akamTester.py',
+                    '-u',
+                    ...this.config.targetHosts
+                ];
+                console.log(`Running: ${this.config.pythonPath} ${args.join(' ')}`);
+            }
+
             console.log(`Working directory: ${cwd}`);
 
-            // Spawn the process
-            const pythonProcess = spawn(this.config.pythonPath, args, {
+            // Spawn the process with UTF-8 encoding to handle Chinese characters
+            const pythonProcess = spawn(command, args, {
                 cwd: cwd,
                 shell: true,
-                windowsHide: true
+                windowsHide: true,
+                env: {
+                    ...process.env,
+                    PYTHONIOENCODING: 'utf-8',  // Force UTF-8 to handle Chinese output
+                    CONDA_NO_PLUGINS: 'true'    // Disable conda plugins to avoid interactive prompts
+                }
             });
 
             let stdout = '';

@@ -1,0 +1,51 @@
+{
+    // Target CDN hostname (do not modify unless you know what you're doing)
+    host: 'upos-hz-mirrorakam.akamaized.net',
+
+    // Proxy server port
+    port: 2689,
+
+    // Interval to re-test IPs and select best server (seconds)
+    refreshInterval: 3600,
+
+    // akamTester automatic IP discovery integration
+    akamTester: {
+        // Enable/disable automatic IP discovery (disabled by default for backward compatibility)
+        enabled: false,
+
+        // Run akamTester every X seconds
+        // Recommended values: 900 (15min), 1800 (30min), 3600 (1hr)
+        interval: 900,
+
+        // Path to Python executable
+        // Windows: 'python' or 'python3' or 'C:\\Python312\\python.exe'
+        // Linux/Mac: 'python3' or '/usr/bin/python3'
+        // Note: If using conda environment, set condaEnv instead of pythonPath
+        pythonPath: 'python',
+
+        // Conda environment name (optional)
+        // If set, will use 'conda run -n <env> python' to run the script
+        // Example: 'AKAMTester'
+        // Leave empty or null to not use conda environment
+        condaEnv: null,
+
+        // akamTester.py script path (relative to project root)
+        scriptPath: 'tools/akamTester/akamTester.py',
+
+        // List of target hosts to discover IPs for (akamTester supports multiple domains)
+        // Currently only using the main domain to avoid complexity
+        targetHosts: ['upos-hz-mirrorakam.akamaized.net'],
+
+        // Save merged IP list back to ip_list.txt?
+        // This preserves newly discovered IPs across server restarts
+        saveToFile: true,
+
+        // Maximum execution time for akamTester (milliseconds)
+        // Kills the process if execution takes too long
+        timeout: 600000,  // 10 minutes
+
+        // Maximum number of IPs to keep in the pool
+        // Prevents unlimited growth
+        maxIps: 200
+    }
+}
