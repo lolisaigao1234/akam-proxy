@@ -1,0 +1,73 @@
+# Development files
+.github/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+tests/
+coverage/
+.nyc_output
+*.lcov
+.jest-cache/
+jest.config.js
+
+# Development tools
+.eslintrc.js
+.editorconfig
+
+# Documentation (keep minimal docs, reference GitHub for full docs)
+docs/assets/
+structure_update.md
+RELEASE_NOTES.md
+
+# Scripts
+scripts/
+
+# AI coding artifacts
+.claude/
+CLAUDE_files/
+readme_files/
+prompt.md
+IMPLEMENTATION_SUMMARY.md
+IMPLEMENTATION_PLAN.md
+CLAUDE.md
+
+# Data files (user-specific)
+data/
+*.bak
+*.backup
+
+# Configuration examples (keep templates)
+config/default.json5
+config/schema.json
+
+# Build artifacts
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Optional directories
+options/
+ffmpeg/
+iperf3/
+temp/
+tmp/
+cache/
+
+# Keep these files for npm
+!README.md
+!CHANGELOG.md
+!CONTRIBUTING.md
+!LICENSE
+!package.json
+!config/example.json5

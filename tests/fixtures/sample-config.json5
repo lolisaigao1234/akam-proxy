@@ -1,0 +1,17 @@
+{
+    // Sample configuration for testing
+    host: 'upos-hz-mirrorakam.akamaized.net',
+    port: 2689,
+    refreshInterval: 3600,
+    akamTester: {
+        enabled: false,
+        interval: 900,
+        pythonPath: 'python',
+        condaEnv: null,
+        scriptPath: 'tools/akamTester/akamTester.py',
+        targetHosts: ['upos-hz-mirrorakam.akamaized.net'],
+        saveToFile: true,
+        timeout: 600000,
+        maxIps: 200
+    }
+}
