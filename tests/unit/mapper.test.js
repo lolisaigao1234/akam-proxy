@@ -7,43 +7,43 @@ describe('proxyMap', () => {
     }
 
     test('should map exact originalHost to optimal IP', () => {
-        const result = proxyMap(mapper, 'upos-hz-mirrorakam.akamaized.net', 443)
+        const result = proxyMap(mapper, { hostname: 'upos-hz-mirrorakam.akamaized.net', port: 443 })
         expect(result.hostname).toBe('2.16.11.163')
         expect(result.port).toBe(443)
     })
 
     test('should map bilivideo.com subdomains to optimal IP', () => {
-        const result = proxyMap(mapper, 'cn-hbxy-cu-01-21.bilivideo.com', 443)
+        const result = proxyMap(mapper, { hostname: 'cn-hbxy-cu-01-21.bilivideo.com', port: 443 })
         expect(result.hostname).toBe('2.16.11.163')
         expect(result.port).toBe(443)
     })
 
     test('should map akamaized.net subdomains to optimal IP', () => {
-        const result = proxyMap(mapper, 'upos-sz-mirroraliov.akamaized.net', 443)
+        const result = proxyMap(mapper, { hostname: 'upos-sz-mirroraliov.akamaized.net', port: 443 })
         expect(result.hostname).toBe('2.16.11.163')
         expect(result.port).toBe(443)
     })
 
     test('should pass through unrelated domains', () => {
-        const result = proxyMap(mapper, 'google.com', 443)
+        const result = proxyMap(mapper, { hostname: 'google.com', port: 443 })
         expect(result.hostname).toBe('google.com')
         expect(result.port).toBe(443)
     })
 
     test('should pass through github.com', () => {
-        const result = proxyMap(mapper, 'github.com', 443)
+        const result = proxyMap(mapper, { hostname: 'github.com', port: 443 })
         expect(result.hostname).toBe('github.com')
         expect(result.port).toBe(443)
     })
 
     test('should preserve port for unmapped domains', () => {
-        const result = proxyMap(mapper, 'example.com', 8080)
+        const result = proxyMap(mapper, { hostname: 'example.com', port: 8080 })
         expect(result.hostname).toBe('example.com')
         expect(result.port).toBe(8080)
     })
 
     test('should preserve port for mapped domains', () => {
-        const result = proxyMap(mapper, 'upos-hz-mirrorakam.akamaized.net', 80)
+        const result = proxyMap(mapper, { hostname: 'upos-hz-mirrorakam.akamaized.net', port: 80 })
         expect(result.hostname).toBe('2.16.11.163')
         expect(result.port).toBe(80)
     })
