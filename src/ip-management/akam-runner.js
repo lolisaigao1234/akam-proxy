@@ -166,8 +166,8 @@ class AkamTesterRunner {
     async executePythonScript() {
         return new Promise((resolve, reject) => {
             // Set working directory to akamTester directory
-            console.log(`Working directory: ${path.join(__dirname, "tools/akamTester")}`);
-            const cwd = path.join(__dirname, "tools/akamTester");
+            const cwd = path.join(__dirname, "../../tools/akamTester");
+            console.log(`Working directory: ${cwd}`);
 
             // Build command and arguments based on conda or direct Python
             let command, args;
@@ -286,7 +286,7 @@ class AkamTesterRunner {
             const filename = `${host}_iplist.txt`;
             const filepath = path.join(
                 __dirname,
-                '../python/akamTester-master',
+                '../../tools/akamTester',
                 filename
             );
 
