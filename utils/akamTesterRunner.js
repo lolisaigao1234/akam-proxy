@@ -142,15 +142,20 @@ class AkamTesterRunner {
      */
     async executePythonScript() {
         return new Promise((resolve, reject) => {
+            // Set working directory to akamTester directory
+            console.log('__dirname:', __dirname);
+            const cwd = path.join(__dirname);
+            
+            // Since we're setting cwd to the akamTester directory, use just the filename
+            const scriptName = path.basename(this.config.scriptPath);
+            console.log('scriptName:', scriptName);
+
             // Build command arguments
             const args = [
-                this.config.scriptPath,
+                scriptName,
                 '-u',
                 ...this.config.targetHosts
             ];
-
-            // Set working directory to akamTester directory
-            const cwd = path.join(__dirname, '../python/akamTester-master');
 
             console.log(`Running: ${this.config.pythonPath} ${args.join(' ')}`);
             console.log(`Working directory: ${cwd}`);
