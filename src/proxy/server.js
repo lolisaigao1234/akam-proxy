@@ -1,6 +1,6 @@
 var net = require('net');
 var http = require('http');
-var proxyMap = require('./proxy-map');
+var proxyMap = require('./mapper');
 
 module.exports = (mapper, serverPort) => {
   var proxyServer = http.createServer(httpOptions);
