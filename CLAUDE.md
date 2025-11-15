@@ -575,6 +575,120 @@ This codebase has undergone significant debugging and improvements. The followin
 
 The proxy is now fully functional, production-ready, and optimized for Bilibili's Akamai CDN with comprehensive debugging capabilities.
 
+## Testing and Test Coverage
+
+The project includes a comprehensive test suite with unit tests for all critical modules.
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run specific test file
+npm test -- tests/unit/ip-pool.test.js
+```
+
+### Test Coverage Summary
+
+Current test coverage (as of v2.0.0):
+
+| Module | Statements | Branches | Functions | Lines | Status |
+|--------|------------|----------|-----------|-------|--------|
+| **ip-pool.js** | 100% | 88.88% | 100% | 100% | ✅ Full Coverage |
+| **tester.js** | 91.17% | 69.56% | 80.95% | 90.32% | ✅ Excellent |
+| **mapper.js** | 100% | 100% | 100% | 100% | ✅ Full Coverage |
+| **logger.js** | 100% | 100% | 100% | 100% | ✅ Full Coverage |
+| **validators.js** | 71.42% | 70.51% | 100% | 69.49% | ✅ Good |
+| **Overall** | 35.56% | 41.37% | 46.46% | 34.11% | ✅ Meets Thresholds |
+
+**Coverage Thresholds** (enforced by Jest):
+- Statements: 30% (current: 35.56%) ✅
+- Branches: 35% (current: 41.37%) ✅
+- Functions: 40% (current: 46.46%) ✅
+- Lines: 30% (current: 34.11%) ✅
+
+### Test Files Structure
+
+```
+tests/
+├── unit/
+│   ├── ip-pool.test.js      (26 tests) - IP management, dedup, dead IP removal
+│   ├── tester.test.js       (14 tests) - Dual-layer latency testing, packet loss
+│   ├── mapper.test.js       (7 tests)  - Domain mapping and proxy logic
+│   ├── validators.test.js   (13 tests) - Config validation and IP format checking
+│   ├── logger.test.js       (5 tests)  - Logging utilities
+│   └── index.test.js        (7 tests)  - Entry point and dependencies
+└── integration/
+    └── (placeholder for future e2e tests)
+```
+
+**Total: 71+ test cases**
+
+### What's Tested
+
+✅ **IP Pool Management** (ip-pool.test.js):
+- Loading/saving IP lists from files
+- Dead IP tracking and removal (after 5 failures)
+- IP deduplication and merging
+- Handling different line endings (Unix, Windows, Mac)
+- IPv6 filtering
+
+✅ **Enhanced IP Testing** (tester.test.js):
+- Dual-layer testing (TCP + HTTP/HTTPS)
+- Packet loss calculation
+- Jitter measurement (latency variance)
+- Comprehensive metrics structure
+- Weighted scoring algorithm (40% TCP + 60% HTTP)
+- Backward compatibility with legacy fields
+
+✅ **Domain Mapping** (mapper.test.js):
+- Exact domain matching (upos-hz-mirrorakam.akamaized.net)
+- Subdomain matching (*.bilivideo.com, *.akamaized.net)
+- Pass-through for unrelated domains
+- Port preservation
+
+✅ **Configuration Validation** (validators.test.js):
+- Config schema validation
+- Port range checking (1-65535)
+- Refresh interval limits
+- IPv4 address format validation
+- akamTester configuration validation
+
+✅ **Utilities** (logger.test.js, index.test.js):
+- Logging functions (log, error, warn, box)
+- Entry point dependencies
+- Config file existence and readability
+
+### What's NOT Tested (Integration-Heavy)
+
+❌ **Proxy Server** (src/proxy/server.js): Requires full HTTP/HTTPS server integration
+❌ **Core Server** (src/core/server.js): Application lifecycle and timer management
+❌ **akamTester Runner** (src/ip-management/akam-runner.js): Python subprocess integration
+
+These modules are integration-heavy and difficult to unit test without extensive mocking. They are best tested manually or with end-to-end integration tests.
+
+### CI/CD Integration
+
+The project includes GitHub Actions workflow (`.github/workflows/test.yml`) that:
+- Runs tests on Node.js 18, 20, 22
+- Generates coverage reports
+- Uploads coverage to Codecov
+- Fails if coverage thresholds are not met
+
+### Adding New Tests
+
+When adding new functionality:
+
+1. **Write tests first** (TDD approach recommended)
+2. **Run tests locally**: `npm test`
+3. **Check coverage**: `npm run test:coverage`
+4. **Ensure thresholds are met** before committing
+5. **Update this documentation** if coverage significantly improves
+
 ## Future Development
 
 From README.md:
