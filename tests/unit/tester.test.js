@@ -13,7 +13,13 @@ jest.mock('tcp-ping', () => ({
             { time: 87.5 },
             { time: 89.1 }
         ];
-        callback(null, results);
+        const data = {
+            results: results,
+            avg: 88.44,
+            min: 85.1,
+            max: 92.3
+        };
+        callback(null, data);
     })
 }));
 
@@ -49,7 +55,13 @@ describe('IP Tester', () => {
                 { time: 87.5 },
                 { time: 89.1 }
             ];
-            callback(null, results);
+            const data = {
+                results: results,
+                avg: 88.44,
+                min: 85.1,
+                max: 92.3
+            };
+            callback(null, data);
         });
 
         // Setup HTTP/HTTPS mock responses
@@ -73,12 +85,19 @@ describe('IP Tester', () => {
                         if (event === 'error') {
                             // No error by default
                         }
+                        if (event === 'timeout') {
+                            // No timeout by default
+                        }
                     }),
-                    end: jest.fn(() => {
-                        setTimeout(() => callback(mockRes), 10);
-                    }),
-                    setTimeout: jest.fn()
+                    end: jest.fn(),
+                    setTimeout: jest.fn(),
+                    destroy: jest.fn()
                 };
+
+                // Call the response callback immediately (simulating successful request)
+                if (callback) {
+                    setImmediate(() => callback(mockRes));
+                }
 
                 return mockReq;
             });
@@ -201,7 +220,13 @@ describe('IP Tester', () => {
                     { time: 85.1 },
                     { time: 88.2 }
                 ];
-                callback(null, results);
+                const data = {
+                    results: results,
+                    avg: 86.65,
+                    min: 85.1,
+                    max: 88.2
+                };
+                callback(null, data);
             });
 
             const ipList = ['192.168.1.1'];
@@ -219,13 +244,16 @@ describe('IP Tester', () => {
             // Mock different latencies for different IPs
             tcpPing.ping
                 .mockImplementationOnce((options, callback) => {
-                    callback(null, [{ time: 100 }, { time: 105 }, { time: 110 }]);
+                    const results = [{ time: 100 }, { time: 105 }, { time: 110 }];
+                    callback(null, { results, avg: 105, min: 100, max: 110 });
                 })
                 .mockImplementationOnce((options, callback) => {
-                    callback(null, [{ time: 50 }, { time: 55 }, { time: 60 }]);
+                    const results = [{ time: 50 }, { time: 55 }, { time: 60 }];
+                    callback(null, { results, avg: 55, min: 50, max: 60 });
                 })
                 .mockImplementationOnce((options, callback) => {
-                    callback(null, [{ time: 75 }, { time: 80 }, { time: 85 }]);
+                    const results = [{ time: 75 }, { time: 80 }, { time: 85 }];
+                    callback(null, { results, avg: 80, min: 75, max: 85 });
                 });
 
             const ipList = ['192.168.1.1', '192.168.1.2', '192.168.1.3'];
