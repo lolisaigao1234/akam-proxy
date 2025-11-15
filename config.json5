@@ -18,6 +18,23 @@
         /* 启用/禁用自动IP发现（默认禁用以保持向后兼容） */
         enabled: true,
 
+        /* 启动时立即验证IP列表（推荐启用）
+         * true: 启动时立即运行akamTester获取新鲜IP，替换旧的ip_list.txt
+         * false: 使用现有ip_list.txt，30秒后才运行akamTester
+         *
+         * 推荐设置为true，因为B站CDN的IP会快速轮换失效
+         * 即使旧IP能ping通和http测试通过，也可能无法连接实际网站
+         */
+        validateOnStartup: true,
+
+        /* IP替换模式（推荐启用）
+         * true: 每次运行akamTester时完全替换旧IP列表（获取新鲜IP）
+         * false: 合并新旧IP（保留旧IP）
+         *
+         * 推荐设置为true以确保IP列表始终新鲜有效
+         */
+        replaceMode: true,
+
         /* 运行akamTester的间隔时间(s)
          * 推荐值: 900 (15分钟), 1800 (30分钟), 3600 (1小时)
          */
