@@ -28,6 +28,11 @@ function validateConfig(config) {
         errors.push('config.refreshInterval must be at least 60 seconds')
     }
 
+    // Validate verboseDebug (optional)
+    if (config.verboseDebug !== undefined && typeof config.verboseDebug !== 'boolean') {
+        errors.push('config.verboseDebug must be a boolean')
+    }
+
     // Validate akamTester configuration if present
     if (config.akamTester) {
         const at = config.akamTester

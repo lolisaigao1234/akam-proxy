@@ -10,7 +10,8 @@ const logger = require('../utils/logger')
 class Server {
     constructor(config) {
         this.config = config
-        this.ipPool = new IpPool('data/ip_list.txt', 5)
+        const verbose = config.verboseDebug || false
+        this.ipPool = new IpPool('data/ip_list.txt', 5, verbose)
         this.akamRunner = null
         this.refreshTimer = null
         this.akamTimer = null

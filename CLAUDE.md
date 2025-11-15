@@ -92,10 +92,13 @@ npm start
 - Returns modified `{ hostname, port }` for connection
 
 **IP Testing: `src/ip-management/tester.js`**
-- Tests latency of IP list using `tcp-ping` library
-- Pings each IP 3 times with 3 second timeout
-- Filters out dead IPs and sorts by average latency
-- Returns array of alive servers sorted by best latency
+- Dual-layer testing: TCP connection (network layer) + HTTP/HTTPS requests (application layer)
+- Tests each IP 5 times per layer with 3 second timeout (default)
+- Calculates comprehensive metrics: latency (avg/min/max), packet loss, jitter
+- Weighted scoring: 40% TCP + 60% HTTP (app-level more important)
+- Filters out dead IPs and sorts by combined score
+- Supports verbose debug logging (see "Verbose Debug Mode" section)
+- Returns array of alive servers sorted by best score
 
 **IP Pool Manager: `src/ip-management/ip-pool.js`**
 - Loads/saves IP list from `data/ip_list.txt`
@@ -123,6 +126,8 @@ The `config.json5` file contains:
 - `host`: Target CDN hostname to optimize (default: 'upos-hz-mirrorakam.akamaized.net')
 - `port`: Local proxy server port (default: 2689)
 - `refreshInterval`: How often to re-test IPs in seconds
+- `verboseDebug`: Enable detailed TCP/HTTP ping logging (default: false, see "Verbose Debug Mode" section)
+- `akamTester`: Configuration for automated IP discovery (see "Automated IP Discovery" section)
 - `refreshIpList.interval`: Legacy parameter (no longer used)
 - `refreshIpList.retry.times`: Legacy parameter (no longer used)
 - `refreshIpList.retry.interval`: Legacy parameter (no longer used)
@@ -135,6 +140,197 @@ The `config.json5` file contains:
 - IPv6 addresses are filtered out (only IPv4 supported)
 - The `best` object is passed by reference to the proxy, so updates to the optimal server take effect immediately without restarting the proxy
 - **Debug logging**: The proxy includes comprehensive step-by-step debug logging. This can be verbose but is helpful for troubleshooting Parse Errors and connection issues.
+
+## Verbose Debug Mode (TCP + HTTP Ping Logging)
+
+The proxy supports detailed debug logging for the dual-layer IP testing process. This feature provides comprehensive visibility into TCP and HTTP ping operations, which is invaluable for understanding server selection and troubleshooting network issues.
+
+### Enabling Verbose Debug Mode
+
+Add the `verboseDebug` option to your `config.json5`:
+
+```json5
+{
+    host: 'upos-hz-mirrorakam.akamaized.net',
+    port: 2689,
+    refreshInterval: 3600,
+
+    // Enable verbose debug logging
+    verboseDebug: true,
+
+    // ... rest of config
+}
+```
+
+### What Gets Logged
+
+When `verboseDebug: true`, you'll see:
+
+1. **Test Initialization**:
+   - Total number of IPs to test
+   - Number of TCP and HTTP attempts per IP
+   - Timeout and port settings
+   - Scoring algorithm details (40% TCP + 60% HTTP weighted)
+
+2. **Individual IP Test Results**:
+   - TCP connection latency (avg/min/max)
+   - HTTP/HTTPS request latency (avg/min/max)
+   - Success rate for each test type
+   - Combined score calculation
+   - Packet loss percentage
+   - Jitter (latency variance) metrics
+   - Real-time progress (X/Y tested, Z% complete)
+
+3. **Summary Statistics**:
+   - Top 5 best performing IPs with detailed metrics
+   - Average TCP/HTTP latency across all alive IPs
+   - Latency ranges (min-max)
+   - Overall packet loss percentage
+   - Total alive vs dead IPs
+
+### Example Output
+
+**Without verbose mode** (default):
+```
+The best server is 23.47.72.160 which delay is 15.59ms
+```
+
+**With verbose mode** (`verboseDebug: true`):
+```
+╔══════════════════════════════════════════╗
+║  Starting Dual-Layer IP Testing          ║
+╠══════════════════════════════════════════╣
+║  Total IPs to test: 89                   ║
+║  TCP ping attempts: 5 per IP             ║
+║  HTTPS ping attempts: 5 per IP           ║
+║  Timeout: 3000ms per attempt             ║
+║  Port: 443                               ║
+║  Scoring: 40% TCP + 60% HTTP (weighted)  ║
+╚══════════════════════════════════════════╝
+
+  Testing 23.47.72.160:443...
+    ✓ TCP: 12.45ms avg (5/5 success)
+    ✓ HTTPS: 18.32ms avg (5/5 success)
+    → Combined Score: 15.97ms (40% TCP + 60% HTTP)
+    → Jitter: TCP 2.31ms, HTTP 3.12ms
+[1/89] 1% - Tested 23.47.72.160
+
+  Testing 2.16.11.163:443...
+    ✓ TCP: 88.12ms avg (5/5 success)
+    ✓ HTTPS: 92.45ms avg (5/5 success)
+    → Combined Score: 90.74ms (40% TCP + 60% HTTP)
+[2/89] 2% - Tested 2.16.11.163
+
+  Testing 104.96.51.89:443...
+    ✗ TCP: Failed (0/5 success)
+    ✗ HTTPS: Failed (0/5 success)
+[3/89] 3% - Tested 104.96.51.89
+
+... (continues for all IPs) ...
+
+╔══════════════════════════════════════════╗
+║  IP Testing Complete                     ║
+╠══════════════════════════════════════════╣
+║  Tested: 89 IPs in 45.23s                ║
+║  Alive: 77 IPs                           ║
+║  Dead: 12 IPs                            ║
+║  Total tests performed: 890 (TCP + HTTP) ║
+╚══════════════════════════════════════════╝
+
+╔══════════════════════════════════════════════════════════════╗
+║  Top 5 Best Performing IPs                                   ║
+╠══════════════════════════════════════════════════════════════╣
+║  1. 23.47.72.160 - Score: 15.97ms (TCP: 12.45ms, HTTP: 18.32ms, Loss: 0.0%)  ║
+║  2. 104.97.23.45 - Score: 22.13ms (TCP: 18.90ms, HTTP: 24.20ms, Loss: 0.0%)  ║
+║  3. 184.25.56.78 - Score: 35.42ms (TCP: 31.20ms, HTTP: 38.10ms, Loss: 0.0%)  ║
+║  4. 23.48.123.90 - Score: 42.88ms (TCP: 39.50ms, HTTP: 45.10ms, Loss: 0.0%)  ║
+║  5. 2.16.11.163 - Score: 90.74ms (TCP: 88.12ms, HTTP: 92.45ms, Loss: 0.0%)   ║
+╚══════════════════════════════════════════════════════════════╝
+
+✓ Selected best server: 23.47.72.160 (score: 15.97ms)
+
+╔══════════════════════════════════════════════════════════════╗
+║  Testing Statistics Summary                                  ║
+╠══════════════════════════════════════════════════════════════╣
+║  Average TCP Latency: 125.34ms (range: 12.45-350.12ms)      ║
+║  Average HTTP Latency: 138.67ms (range: 18.32-420.45ms)     ║
+║  Average Combined Score: 133.21ms                            ║
+║  Average Packet Loss: 2.34%                                  ║
+║  Total Alive IPs: 77/89                                      ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+### Understanding the Metrics
+
+**TCP Latency**: Connection-level latency (network layer)
+- Measures raw TCP connection establishment time
+- Lower-level network performance indicator
+- Weighted 40% in final score
+
+**HTTP/HTTPS Latency**: Application-level latency
+- Measures full request-response time
+- Real-world proxy performance indicator
+- Weighted 60% in final score (more important)
+
+**Combined Score**: Weighted average with packet loss penalty
+- Formula: `(TCP_avg * 0.4 + HTTP_avg * 0.6) * (1 + packet_loss/100)`
+- Lower score = better performance
+- Used for server selection
+
+**Packet Loss**: Percentage of failed test attempts
+- 0% = all attempts succeeded
+- >0% = some attempts timed out or failed
+- Increases combined score as penalty
+
+**Jitter**: Standard deviation of latency measurements
+- Measures latency consistency/variance
+- Lower jitter = more stable connection
+- High jitter = unstable/congested network
+
+### Performance Impact
+
+**With `verboseDebug: false` (default)**:
+- Minimal console output
+- Faster startup (no formatting overhead)
+- Recommended for production
+
+**With `verboseDebug: true`**:
+- Detailed console output (can be very long with many IPs)
+- Slightly slower due to logging overhead (~1-2 seconds)
+- Recommended for:
+  - Debugging network issues
+  - Understanding server selection
+  - Monitoring IP pool health
+  - Development and testing
+
+### When to Use Verbose Mode
+
+✅ **Enable when**:
+- Debugging why certain IPs are selected/rejected
+- Investigating packet loss or high latency
+- Understanding scoring algorithm behavior
+- Monitoring IP pool quality over time
+- Troubleshooting akamTester integration
+
+❌ **Disable when**:
+- Running in production (too much log spam)
+- You trust the automatic selection
+- Console output is redirected to files (large files)
+- Running as a background service
+
+### Implementation Details
+
+**Location**:
+- Testing logic: `src/ip-management/tester.js`
+- IP pool management: `src/ip-management/ip-pool.js`
+- Server initialization: `src/core/server.js`
+
+**How it works**:
+1. `config.verboseDebug` flag is read at startup
+2. Passed to `IpPool` constructor → stored as `this.verbose`
+3. Passed to `tester()` function as `{ verbose: true/false }`
+4. Tester uses `logger.box()` and `logger.log()` for formatted output
+5. IP pool uses verbose flag to show/hide top performers and statistics
 
 ## Troubleshooting
 
