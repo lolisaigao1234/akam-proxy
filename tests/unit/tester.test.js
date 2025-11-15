@@ -89,7 +89,7 @@ describe('IP Tester', () => {
     });
 
     describe('testIpList', () => {
-        test.skip('should test list of IPs and return results sorted by score', async () => {
+        test('should test list of IPs and return results sorted by score', async () => {
             const ipList = ['192.168.1.1', '192.168.1.2', '192.168.1.3'];
 
             const results = await testIpList(ipList);
@@ -115,7 +115,7 @@ describe('IP Tester', () => {
             expect(results.every(r => r.alive)).toBe(true);
         });
 
-        test.skip('should return results with comprehensive metrics structure', async () => {
+        test('should return results with comprehensive metrics structure', async () => {
             const ipList = ['192.168.1.1'];
 
             const results = await testIpList(ipList);
@@ -159,7 +159,7 @@ describe('IP Tester', () => {
             expect(result).toHaveProperty('results');
         });
 
-        test.skip('should accept custom options', async () => {
+        test('should accept custom options', async () => {
             const ipList = ['192.168.1.1'];
             const options = {
                 attempts: 3,
@@ -174,7 +174,7 @@ describe('IP Tester', () => {
             expect(results.length).toBeGreaterThan(0);
         });
 
-        test.skip('should use HTTPS by default', async () => {
+        test('should use HTTPS by default', async () => {
             const https = require('https');
             const ipList = ['192.168.1.1'];
 
@@ -183,7 +183,7 @@ describe('IP Tester', () => {
             expect(https.request).toHaveBeenCalled();
         });
 
-        test.skip('should use HTTP when useHttps is false', async () => {
+        test('should use HTTP when useHttps is false', async () => {
             const http = require('http');
             const ipList = ['192.168.1.1'];
 
