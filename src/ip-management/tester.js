@@ -1,6 +1,7 @@
 const tcpp = require('tcp-ping')
 const https = require('https')
 const http = require('http')
+const logger = require('../utils/logger')
 
 /**
  * Enhanced IP tester with comprehensive latency and packet loss metrics
@@ -14,6 +15,7 @@ const http = require('http')
  * @param {number} options.timeout - Timeout per attempt in ms (default: 3000)
  * @param {number} options.port - Port to test (default: 443)
  * @param {boolean} options.useHttps - Use HTTPS for app-level test (default: true)
+ * @param {boolean} options.verbose - Enable detailed logging (default: false)
  * @returns {Promise<Array>} Sorted array of test results
  */
 module.exports = (ipList, options = {}) => {
@@ -21,19 +23,59 @@ module.exports = (ipList, options = {}) => {
         attempts = 5,
         timeout = 3000,
         port = 443,
-        useHttps = true
+        useHttps = true,
+        verbose = false
     } = options
 
+    if (verbose) {
+        console.log('')
+        logger.box('Starting Dual-Layer IP Testing', [
+            `Total IPs to test: ${ipList.length}`,
+            `TCP ping attempts: ${attempts} per IP`,
+            `HTTP${useHttps ? 'S' : ''} ping attempts: ${attempts} per IP`,
+            `Timeout: ${timeout}ms per attempt`,
+            `Port: ${port}`,
+            `Scoring: 40% TCP + 60% HTTP (weighted)`
+        ])
+        console.log('')
+    }
+
+    const startTime = Date.now()
+    let completedCount = 0
+
     return Promise.all(
-        ipList.map(ip => testIp(ip, { attempts, timeout, port, useHttps }))
+        ipList.map(async (ip, index) => {
+            const result = await testIp(ip, { attempts, timeout, port, useHttps, verbose })
+            completedCount++
+
+            if (verbose) {
+                const progress = Math.round((completedCount / ipList.length) * 100)
+                logger.log(`[${completedCount}/${ipList.length}] ${progress}% - Tested ${ip}`)
+            }
+
+            return result
+        })
     )
     .then(results => {
-        return results
-            .filter(item => item.alive)
-            .sort((prev, next) => {
-                // Sort by combined score (weighted average of TCP and HTTP latency)
-                return prev.score - next.score
-            })
+        const aliveResults = results.filter(item => item.alive)
+        const deadCount = results.length - aliveResults.length
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2)
+
+        if (verbose) {
+            console.log('')
+            logger.box('IP Testing Complete', [
+                `Tested: ${ipList.length} IPs in ${elapsed}s`,
+                `Alive: ${aliveResults.length} IPs`,
+                `Dead: ${deadCount} IPs`,
+                `Total tests performed: ${ipList.length * attempts * 2} (TCP + HTTP)`
+            ])
+            console.log('')
+        }
+
+        return aliveResults.sort((prev, next) => {
+            // Sort by combined score (weighted average of TCP and HTTP latency)
+            return prev.score - next.score
+        })
     })
 }
 
@@ -41,14 +83,32 @@ module.exports = (ipList, options = {}) => {
  * Test a single IP with comprehensive metrics
  */
 async function testIp(ip, options) {
-    const { attempts, timeout, port, useHttps } = options
+    const { attempts, timeout, port, useHttps, verbose } = options
 
     try {
+        if (verbose) {
+            logger.log(`\n  Testing ${ip}:${port}...`)
+        }
+
         // Run TCP connection tests
         const tcpResults = await testTcpConnection(ip, port, attempts, timeout)
 
+        if (verbose) {
+            const tcpStatus = tcpResults.alive
+                ? `✓ TCP: ${tcpResults.avg.toFixed(2)}ms avg (${tcpResults.successCount}/${attempts} success)`
+                : `✗ TCP: Failed (${tcpResults.successCount}/${attempts} success)`
+            logger.log(`    ${tcpStatus}`)
+        }
+
         // Run HTTP/HTTPS application-level tests
         const httpResults = await testHttpRequest(ip, port, attempts, timeout, useHttps)
+
+        if (verbose) {
+            const httpStatus = httpResults.alive
+                ? `✓ HTTP${useHttps ? 'S' : ''}: ${httpResults.avg.toFixed(2)}ms avg (${httpResults.successCount}/${attempts} success)`
+                : `✗ HTTP${useHttps ? 'S' : ''}: Failed (${httpResults.successCount}/${attempts} success)`
+            logger.log(`    ${httpStatus}`)
+        }
 
         // Calculate combined metrics
         const alive = tcpResults.alive || httpResults.alive
@@ -70,6 +130,16 @@ async function testIp(ip, options) {
         const score = alive
             ? (tcpResults.avg * 0.4 + httpResults.avg * 0.6) * (1 + overallPacketLoss / 100)
             : Number.MAX_SAFE_INTEGER
+
+        if (verbose && alive) {
+            logger.log(`    → Combined Score: ${score.toFixed(2)}ms (40% TCP + 60% HTTP)`)
+            if (overallPacketLoss > 0) {
+                logger.log(`    → Packet Loss: ${overallPacketLoss.toFixed(1)}% (penalty applied)`)
+            }
+            if (tcpJitter > 0 || httpJitter > 0) {
+                logger.log(`    → Jitter: TCP ${tcpJitter.toFixed(2)}ms, HTTP ${httpJitter.toFixed(2)}ms`)
+            }
+        }
 
         return {
             host: ip,
@@ -114,6 +184,10 @@ async function testIp(ip, options) {
             }
         }
     } catch (error) {
+        if (verbose) {
+            logger.error(`    ✗ Error testing ${ip}: ${error.message}`)
+        }
+
         return {
             host: ip,
             alive: false,

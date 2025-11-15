@@ -1,17 +1,19 @@
 const fs = require('fs')
 const tester = require('./tester')
+const logger = require('../utils/logger')
 
 /**
  * IP Pool Manager
  * Manages IP list, testing, dead IP removal, and best server selection
  */
 class IpPool {
-    constructor(ipListPath, maxFailures = 5) {
+    constructor(ipListPath, maxFailures = 5, verbose = false) {
         this.ipListPath = ipListPath
         this.maxFailures = maxFailures
         this.ipList = []
         this.ipFailureCount = new Map()
         this.best = { host: null, avg: Number.MAX_SAFE_INTEGER, originalHost: null }
+        this.verbose = verbose
     }
 
     /**
@@ -57,13 +59,32 @@ class IpPool {
      * Returns Promise<void>
      */
     async refreshBest() {
-        console.log('Pinging ipList')
-        const goodList = await tester(this.ipList)
+        const goodList = await tester(this.ipList, { verbose: this.verbose })
 
         if (goodList.length) {
             this.best.host = goodList[0].host
             this.best.avg = goodList[0].avg
-            console.log(`The best server is ${this.best.host} which delay is ${this.best.avg}ms`)
+
+            if (this.verbose) {
+                // Show top 5 performers
+                console.log('')
+                logger.box('Top 5 Best Performing IPs', [
+                    ...goodList.slice(0, 5).map((ip, index) => {
+                        const rank = index + 1
+                        const tcpAvg = ip.tcp.avg.toFixed(2)
+                        const httpAvg = ip.http.avg.toFixed(2)
+                        const score = ip.score.toFixed(2)
+                        const packetLoss = ip.overall.packetLoss.toFixed(1)
+                        return `${rank}. ${ip.host} - Score: ${score}ms (TCP: ${tcpAvg}ms, HTTP: ${httpAvg}ms, Loss: ${packetLoss}%)`
+                    })
+                ])
+                console.log('')
+                logger.log(`✓ Selected best server: ${this.best.host} (score: ${this.best.avg.toFixed(2)}ms)`)
+                console.log('')
+            } else {
+                // Simple output for non-verbose mode
+                console.log(`The best server is ${this.best.host} which delay is ${this.best.avg.toFixed(2)}ms`)
+            }
 
             // Reset failure counts for alive IPs
             const aliveIps = new Set(goodList.map(item => item.host))
@@ -89,9 +110,44 @@ class IpPool {
             if (deadIps.length > 0) {
                 this.removeDeadIps(deadIps)
             }
+
+            if (this.verbose) {
+                // Show detailed statistics
+                this.showStatistics(goodList)
+            }
         } else {
             console.log('Could not find any available server')
         }
+    }
+
+    /**
+     * Show detailed testing statistics
+     */
+    showStatistics(goodList) {
+        const tcpLatencies = goodList.map(ip => ip.tcp.avg)
+        const httpLatencies = goodList.map(ip => ip.http.avg)
+        const scores = goodList.map(ip => ip.score)
+
+        const avgTcp = (tcpLatencies.reduce((a, b) => a + b, 0) / tcpLatencies.length).toFixed(2)
+        const avgHttp = (httpLatencies.reduce((a, b) => a + b, 0) / httpLatencies.length).toFixed(2)
+        const avgScore = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2)
+
+        const minTcp = Math.min(...tcpLatencies).toFixed(2)
+        const maxTcp = Math.max(...tcpLatencies).toFixed(2)
+        const minHttp = Math.min(...httpLatencies).toFixed(2)
+        const maxHttp = Math.max(...httpLatencies).toFixed(2)
+
+        const totalPacketLoss = goodList.reduce((sum, ip) => sum + ip.overall.packetLoss, 0)
+        const avgPacketLoss = (totalPacketLoss / goodList.length).toFixed(2)
+
+        logger.box('Testing Statistics Summary', [
+            `Average TCP Latency: ${avgTcp}ms (range: ${minTcp}-${maxTcp}ms)`,
+            `Average HTTP Latency: ${avgHttp}ms (range: ${minHttp}-${maxHttp}ms)`,
+            `Average Combined Score: ${avgScore}ms`,
+            `Average Packet Loss: ${avgPacketLoss}%`,
+            `Total Alive IPs: ${goodList.length}/${this.ipList.length}`
+        ])
+        console.log('')
     }
 
     /**

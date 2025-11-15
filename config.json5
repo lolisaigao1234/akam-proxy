@@ -6,6 +6,13 @@
     /* 重新查找最优节点的间隔时间(s) */
     refreshInterval: 3600,
 
+    /* 详细调试输出
+     * 启用后将显示TCP和HTTP ping的详细测试过程
+     * 包括每个IP的测试结果、延迟、丢包率、抖动等信息
+     * 默认: false (仅显示简单输出)
+     */
+    verboseDebug: true,
+
     /* akamTester 自动IP发现集成 */
     akamTester: {
         /* 启用/禁用自动IP发现（默认禁用以保持向后兼容） */
