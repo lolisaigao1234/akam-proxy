@@ -167,6 +167,32 @@ class IpPool {
     }
 
     /**
+     * Replace the entire IP list with new IPs (no merging)
+     * Used when fresh IPs are needed (e.g., on startup validation)
+     */
+    replaceIps(newIps, maxIps = 200) {
+        const oldCount = this.ipList.length
+
+        // Deduplicate new IPs
+        const uniqueIps = Array.from(new Set(newIps))
+
+        // Limit total IPs if needed
+        if (uniqueIps.length > maxIps) {
+            console.log(`Discovered ${uniqueIps.length} IPs, limiting to ${maxIps}`)
+            this.ipList = uniqueIps.slice(0, maxIps)
+        } else {
+            this.ipList = uniqueIps
+        }
+
+        // Clear failure counts since we have fresh IPs
+        this.ipFailureCount.clear()
+
+        console.log(`IP list replaced: ${oldCount} → ${this.ipList.length} IPs (${this.ipList.length} fresh from akamTester)`)
+
+        return this.ipList.length
+    }
+
+    /**
      * Merge new IPs into the pool (deduplication)
      */
     mergeNewIps(newIps, maxIps = 200) {

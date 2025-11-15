@@ -21,7 +21,15 @@ class Server {
      * Initialize and start the server
      */
     async start() {
-        // Load IP list
+        // Initialize akamTester first (before loading IP list)
+        this.initAkamTester()
+
+        // Run immediate IP validation if enabled
+        if (this.akamRunner && this.config.akamTester.validateOnStartup) {
+            await this.runStartupValidation()
+        }
+
+        // Load IP list (either fresh from akamTester or existing file)
         const ipList = this.ipPool.loadFromFile()
 
         // Initialize best object with first IP
@@ -30,9 +38,6 @@ class Server {
         if (ipList.length > 0) {
             best.host = ipList[0]
         }
-
-        // Initialize akamTester if enabled
-        this.initAkamTester()
 
         // Initial server selection
         await this.ipPool.refreshBest()
@@ -45,6 +50,54 @@ class Server {
 
         // Start proxy server
         proxyServer(best, this.config.port)
+    }
+
+    /**
+     * Run immediate IP validation on startup
+     * Fetches fresh IPs from akamTester and replaces the old list
+     */
+    async runStartupValidation() {
+        console.log('')
+        logger.box('STARTUP IP VALIDATION', [
+            'Running akamTester to fetch fresh IPs...',
+            'Old ip_list.txt will be replaced with fresh results',
+            'This ensures no expired/rotated IPs are used'
+        ])
+        console.log('')
+
+        try {
+            const newIps = await this.akamRunner.run()
+
+            if (newIps.length === 0) {
+                logger.error('akamTester returned no IPs during startup validation!')
+                logger.log('Falling back to existing ip_list.txt (if it exists)')
+                console.log('')
+                return
+            }
+
+            // Replace the entire IP list with fresh results
+            const replaceMode = this.config.akamTester.replaceMode !== false // Default to true
+            if (replaceMode) {
+                this.ipPool.replaceIps(newIps, this.config.akamTester.maxIps)
+            } else {
+                this.ipPool.mergeNewIps(newIps, this.config.akamTester.maxIps)
+            }
+
+            // Save to file
+            this.ipPool.saveToFile()
+            logger.log('✓ Saved fresh IP list to data/ip_list.txt')
+
+            console.log('')
+            logger.box('Startup validation completed', [
+                `Fresh IP list ready with ${this.ipPool.getIpList().length} IPs`
+            ])
+            console.log('')
+
+        } catch (error) {
+            logger.error('Startup IP validation failed:', error.message)
+            logger.log('Falling back to existing ip_list.txt (if it exists)')
+            console.log('')
+        }
     }
 
     /**
@@ -91,19 +144,30 @@ class Server {
             return
         }
 
-        logger.log('First akamTester run scheduled in 30 seconds...')
-        logger.log(`Subsequent runs every ${Math.floor(this.config.akamTester.interval / 60)} minutes`)
-        console.log('')
+        // Skip periodic discovery if validateOnStartup is enabled (already ran)
+        if (this.config.akamTester.validateOnStartup) {
+            logger.log(`Periodic akamTester runs scheduled every ${Math.floor(this.config.akamTester.interval / 60)} minutes`)
+            console.log('')
 
-        // First run after 30 seconds
-        setTimeout(() => {
-            this.runDiscovery()
-        }, 30000)
+            // Run every interval (no initial 30s delay since we just ran on startup)
+            this.akamTimer = setInterval(() => {
+                this.runDiscovery()
+            }, this.config.akamTester.interval * 1000)
+        } else {
+            logger.log('First akamTester run scheduled in 30 seconds...')
+            logger.log(`Subsequent runs every ${Math.floor(this.config.akamTester.interval / 60)} minutes`)
+            console.log('')
 
-        // Then run every interval
-        this.akamTimer = setInterval(() => {
-            this.runDiscovery()
-        }, this.config.akamTester.interval * 1000)
+            // First run after 30 seconds
+            setTimeout(() => {
+                this.runDiscovery()
+            }, 30000)
+
+            // Then run every interval
+            this.akamTimer = setInterval(() => {
+                this.runDiscovery()
+            }, this.config.akamTester.interval * 1000)
+        }
     }
 
     /**
@@ -115,8 +179,10 @@ class Server {
         }
 
         console.log('')
+        const replaceMode = this.config.akamTester.replaceMode !== false // Default to true
         logger.box('Running akamTester to discover new IPs', [
-            `Current IP list size: ${this.ipPool.getIpList().length}`
+            `Current IP list size: ${this.ipPool.getIpList().length}`,
+            `Mode: ${replaceMode ? 'REPLACE (old IPs will be wiped)' : 'MERGE (combine with existing)'}`
         ])
 
         try {
@@ -128,8 +194,12 @@ class Server {
                 return
             }
 
-            // Merge new IPs
-            this.ipPool.mergeNewIps(newIps, this.config.akamTester.maxIps)
+            // Replace or merge new IPs based on config
+            if (replaceMode) {
+                this.ipPool.replaceIps(newIps, this.config.akamTester.maxIps)
+            } else {
+                this.ipPool.mergeNewIps(newIps, this.config.akamTester.maxIps)
+            }
 
             // Save to file if configured
             if (this.config.akamTester.saveToFile) {
