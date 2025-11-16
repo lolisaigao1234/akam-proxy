@@ -470,25 +470,28 @@ The project includes `python/akamTester-master/` - a Python tool for discovering
 
 ## Automated IP Discovery (akamTester Integration)
 
-**NEW FEATURE**: The proxy now supports fully automated IP discovery! No more manual copy-paste of IP addresses.
+**NEW FEATURE**: The proxy now supports fully automated IP discovery with **startup validation**! Fresh IPs on every restart.
 
 ### Overview
 
 The akamTester integration automatically:
+- **Validates IPs immediately on startup** (recommended, replaces old ip_list.txt with fresh IPs)
 - Runs akamTester.py periodically (default: every 15 minutes)
 - Discovers new CDN IPs from global DNS sources
-- Merges discoveries with existing IPs (deduplication)
-- Tests all IPs with tcp-ping and selects the best one
+- **Replaces** old IPs with fresh ones (default, recommended for Bilibili's rotating CDN)
+- Tests all IPs with dual-layer testing (TCP + HTTP) and selects the best one
 - Removes dead IPs automatically after 5 consecutive failures
 - Saves updated IP list to `ip_list.txt`
 
-**Architecture**: Uses akamTester for **IP discovery** (comprehensive but slow) and tcp-ping for **IP selection** (fast and responsive to current network conditions).
+**Why Startup Validation?** Bilibili's CDN IPs rotate frequently and expire quickly. Even if an old IP passes ping/HTTP tests, it may no longer work for actual video connections. Running akamTester on startup ensures you always have fresh, valid IPs.
+
+**Architecture**: Uses akamTester for **IP discovery** (comprehensive but slow) and dual-layer testing for **IP selection** (fast and responsive to current network conditions).
 
 ### Quick Start
 
 1. **Install Python dependencies**:
    ```bash
-   cd python/akamTester-master
+   cd tools/akamTester
    pip install -r requirements.txt
    cd ../..
    ```
@@ -497,9 +500,11 @@ The akamTester integration automatically:
    ```json5
    {
        akamTester: {
-           enabled: true,        // Enable automatic discovery
-           interval: 900,        // Run every 15 minutes
-           pythonPath: 'python', // Adjust if needed
+           enabled: true,              // Enable automatic discovery
+           validateOnStartup: true,    // Run immediately on startup (recommended!)
+           replaceMode: true,          // Replace old IPs (recommended!)
+           interval: 900,              // Run every 15 minutes
+           pythonPath: 'python',       // Adjust if needed (or set condaEnv)
            // ... other settings use defaults
        }
    }
@@ -511,25 +516,37 @@ The akamTester integration automatically:
    ```
 
 4. **Verify it's working**:
-   - Look for "akamTester Integration ENABLED" in startup logs
-   - After 30 seconds, you'll see "Running akamTester to discover new IPs"
-   - Watch for "IP list updated" and "Saved updated IP list to ip_list.txt"
+   - Look for "STARTUP IP VALIDATION" box in logs
+   - You'll see "Running akamTester to fetch fresh IPs..."
+   - Watch for "IP list replaced: X → Y IPs (Y fresh from akamTester)"
+   - Then see "Saved fresh IP list to data/ip_list.txt"
+   - Finally see dual-layer testing and best server selection
 
 ### How It Works
 
-**Startup Flow**:
+**Startup Flow (with `validateOnStartup: true`, recommended)**:
+1. Server initializes akamTester integration
+2. **Immediately runs akamTester** to fetch fresh IPs from global DNS (2-5 minutes)
+3. **Replaces old ip_list.txt** with fresh IPs (if `replaceMode: true`)
+4. Saves fresh IP list to file
+5. Tests all fresh IPs with dual-layer testing (TCP + HTTP)
+6. Selects best server and starts proxy
+7. **Every 15 minutes** (configurable), runs akamTester again to refresh
+
+**Startup Flow (with `validateOnStartup: false`, legacy behavior)**:
 1. Server loads existing `ip_list.txt`
-2. Tests all IPs with tcp-ping
+2. Tests all IPs with dual-layer testing
 3. Selects best server and starts proxy
 4. **After 30 seconds**, runs first akamTester discovery (background)
 5. **Every 15 minutes** (configurable), runs akamTester again
 
-**Discovery Cycle**:
+**Discovery Cycle (during periodic refresh)**:
 1. akamTester queries global DNS sources (2-5 minutes)
-2. New IPs are merged with existing list (Set deduplication)
-3. Updated list saved to `ip_list.txt` (if `saveToFile: true`)
-4. All IPs re-tested with tcp-ping (~10 seconds)
-5. Best server selected and proxy updated (no restart needed!)
+2. **Replace mode** (`replaceMode: true`, default): Completely replaces old IPs with fresh ones
+3. **Merge mode** (`replaceMode: false`): Merges new IPs with existing list (deduplication)
+4. Updated list saved to `ip_list.txt` (if `saveToFile: true`)
+5. All IPs re-tested with dual-layer testing (~10 seconds per IP)
+6. Best server selected and proxy updated (no restart needed!)
 
 **Dead IP Removal**:
 - Every time `refreshBest()` runs (every hour by default)
@@ -545,9 +562,12 @@ The akamTester integration automatically:
 | Option | Default | Description |
 |--------|---------|-------------|
 | `enabled` | `false` | Enable/disable automatic IP discovery |
+| `validateOnStartup` | `false` | **[NEW]** Run akamTester immediately on startup (before loading ip_list.txt). **Recommended: `true`** for Bilibili's rotating CDN IPs |
+| `replaceMode` | `true` | **[NEW]** Replace old IPs completely (true) or merge with existing (false). **Recommended: `true`** to ensure fresh IPs |
 | `interval` | `900` | How often to run akamTester (seconds). Recommended: 900 (15min), 1800 (30min), 3600 (1hr) |
 | `pythonPath` | `'python'` | Path to Python executable. Windows: `'python'` or `'C:\\Python312\\python.exe'`. Linux/Mac: `'python3'` or `'/usr/bin/python3'` |
-| `scriptPath` | `'python/akamTester-master/akamTester.py'` | Path to akamTester.py (relative to project root) |
+| `condaEnv` | `null` | Conda environment name (optional). If set, uses `conda run -n <env> python`. Example: `'AKAMTester'` |
+| `scriptPath` | `'tools/akamTester/akamTester.py'` | Path to akamTester.py (relative to project root) |
 | `targetHosts` | `['upos-hz-mirrorakam.akamaized.net']` | Array of CDN domains to discover IPs for |
 | `saveToFile` | `true` | Save updated IP list to `ip_list.txt` (persists across restarts) |
 | `timeout` | `600000` | Max execution time for akamTester in milliseconds (10 minutes) |
@@ -562,14 +582,17 @@ The akamTester integration automatically:
     refreshInterval: 3600,
 
     akamTester: {
-        enabled: true,           // Turn on automatic discovery
-        interval: 900,           // Run every 15 minutes
-        pythonPath: 'python3',   // Linux/Mac users might need this
-        scriptPath: 'python/akamTester-master/akamTester.py',
+        enabled: true,              // Turn on automatic discovery
+        validateOnStartup: true,    // Fetch fresh IPs on startup (recommended!)
+        replaceMode: true,          // Replace old IPs completely (recommended!)
+        interval: 900,              // Run every 15 minutes
+        pythonPath: 'python3',      // Linux/Mac users might need this
+        condaEnv: 'AKAMTester',     // Optional: use conda environment
+        scriptPath: 'tools/akamTester/akamTester.py',
         targetHosts: ['upos-hz-mirrorakam.akamaized.net'],
-        saveToFile: true,        // Persist discoveries
-        timeout: 600000,         // 10 minute timeout
-        maxIps: 200              // Keep best 200 IPs
+        saveToFile: true,           // Persist discoveries
+        timeout: 600000,            // 10 minute timeout
+        maxIps: 200                 // Keep best 200 IPs
     }
 }
 ```
@@ -659,7 +682,50 @@ The akamTester integration is designed to **never break your proxy**:
 
 ### Logs to Expect
 
-**When enabled at startup**:
+**When enabled with startup validation** (`validateOnStartup: true`, recommended):
+```
+╔══════════════════════════════════════════════════════════════╗
+║  akamTester Integration ENABLED                              ║
+╚══════════════════════════════════════════════════════════════╝
+Discovery interval: 900s (15 minutes)
+Python environment: Conda environment 'AKAMTester'
+Target hosts: upos-hz-mirrorakam.akamaized.net
+Max IPs: 200
+
+╔══════════════════════════════════════════════════════════════╗
+║  STARTUP IP VALIDATION                                       ║
+╠══════════════════════════════════════════════════════════════╣
+║  Running akamTester to fetch fresh IPs...                    ║
+║  Old ip_list.txt will be replaced with fresh results         ║
+║  This ensures no expired/rotated IPs are used                ║
+╚══════════════════════════════════════════════════════════════╝
+
+Executing akamTester.py...
+Working directory: /home/user/akam-proxy/tools/akamTester
+Running: conda run -n AKAMTester python akamTester.py -u upos-hz-mirrorakam.akamaized.net
+[akamTester] 当前 akamTester 版本: 6.0
+[akamTester] 当前测试域名：upos-hz-mirrorakam.akamaized.net
+...
+akamTester discovered 124 IPs
+IP list replaced: 89 → 124 IPs (124 fresh from akamTester)
+✓ Saved fresh IP list to data/ip_list.txt
+
+╔══════════════════════════════════════════════════════════════╗
+║  Startup validation completed                                ║
+╠══════════════════════════════════════════════════════════════╣
+║  Fresh IP list ready with 124 IPs                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+Loaded 124 IP addresses from data/ip_list.txt
+Pinging ipList
+[... dual-layer testing output ...]
+The best server is 23.47.72.160 which delay is 15.59ms
+
+forward proxy server started, listening on port 2689
+Periodic akamTester runs scheduled every 15 minutes
+```
+
+**When enabled without startup validation** (`validateOnStartup: false`, legacy):
 ```
 ╔══════════════════════════════════════════════════════════════╗
 ║  akamTester Integration ENABLED                              ║
@@ -673,27 +739,45 @@ First akamTester run scheduled in 30 seconds...
 Subsequent runs every 15 minutes
 ```
 
-**During discovery**:
+**During periodic discovery (replace mode)**:
 ```
 ╔══════════════════════════════════════════════════════════════╗
 ║  Running akamTester to discover new IPs                      ║
+╠══════════════════════════════════════════════════════════════╣
+║  Current IP list size: 77                                    ║
+║  Mode: REPLACE (old IPs will be wiped)                       ║
 ╚══════════════════════════════════════════════════════════════╝
-Current IP list size: 77
 Executing akamTester.py...
-Running: python python/akamTester-master/akamTester.py -u upos-hz-mirrorakam.akamaized.net
+Running: python tools/akamTester/akamTester.py -u upos-hz-mirrorakam.akamaized.net
 [akamTester] 当前 akamTester 版本: 6.0
 [akamTester] 当前测试域名：upos-hz-mirrorakam.akamaized.net
 ...
-akamTester discovered 48 IPs (12 new, 36 already known)
-IP list updated: 77 → 89 IPs
-✓ Saved updated IP list to ip_list.txt
-Re-testing all IPs with tcp-ping to find the best server...
+akamTester discovered 132 IPs
+IP list replaced: 77 → 132 IPs (132 fresh from akamTester)
+✓ Saved updated IP list to data/ip_list.txt
+Re-testing all IPs with dual-layer testing to find the best server...
 Pinging ipList
-The best server is 2.16.11.163 which delay is 88.2417ms
+The best server is 2.16.11.163 which delay is 88.24ms
 
 ╔══════════════════════════════════════════════════════════════╗
 ║  IP refresh cycle completed                                  ║
 ╚══════════════════════════════════════════════════════════════╝
+```
+
+**During periodic discovery (merge mode)**:
+```
+╔══════════════════════════════════════════════════════════════╗
+║  Running akamTester to discover new IPs                      ║
+╠══════════════════════════════════════════════════════════════╣
+║  Current IP list size: 77                                    ║
+║  Mode: MERGE (combine with existing)                         ║
+╚══════════════════════════════════════════════════════════════╝
+Executing akamTester.py...
+[... output ...]
+Discovered 48 IPs (12 new, 36 already known)
+IP list updated: 77 → 89 IPs
+✓ Saved updated IP list to data/ip_list.txt
+[... rest of output ...]
 ```
 
 **When dead IPs are removed**:
@@ -707,16 +791,21 @@ Removing 3 dead IP(s) (failed 5+ times consecutively):
 
 ### Comparison: Manual vs Automated
 
-| Aspect | Manual (akamTester CLI) | Automated (Integration) |
-|--------|------------------------|-------------------------|
-| Setup | Run script, copy IPs, paste, restart | Enable in config, done! |
-| Frequency | Whenever you remember | Every 15 minutes automatically |
-| Server restart needed | Yes | No |
-| Effort | High (manual each time) | Zero (fully automatic) |
-| Dead IP removal | Manual | Automatic after 5 failures |
-| Best for | One-time setup | Production / long-running |
+| Aspect | Manual (akamTester CLI) | Automated (Integration) | Automated + Startup Validation |
+|--------|------------------------|-------------------------|-------------------------------|
+| Setup | Run script, copy IPs, paste, restart | Enable in config, done! | Enable + validateOnStartup, done! |
+| Fresh IPs on startup | Manual run required | Uses cached ip_list.txt | **Always fresh** (runs akamTester first) |
+| Frequency | Whenever you remember | Every 15 minutes automatically | Startup + every 15 minutes |
+| Server restart needed | Yes | No | No |
+| Effort | High (manual each time) | Zero (fully automatic) | Zero (fully automatic) |
+| Dead IP removal | Manual | Automatic after 5 failures | Automatic after 5 failures |
+| IP rotation handling | Poor (stale IPs) | Good (periodic refresh) | **Excellent** (always fresh) |
+| Best for | One-time setup | Production | **Production (recommended!)** |
 
-**Recommendation**: Use automated integration for production. Use manual method for testing or if you don't have Python installed.
+**Recommendation**:
+- **Production**: Use automated integration with `validateOnStartup: true` and `replaceMode: true` (best)
+- **Development**: Use automated integration with default settings (good)
+- **Testing/No Python**: Use manual method (basic)
 
 ## Code History and Bug Fixes
 
@@ -758,18 +847,29 @@ This codebase has undergone significant debugging and improvements. The followin
    - Enhanced clientError handler with rawPacket hex dump
    - Makes future Parse Error debugging much easier
 
+7. **Startup IP Validation** (November 2025)
+   - Added `validateOnStartup` option to run akamTester immediately on startup
+   - Added `replaceMode` option to replace old IPs instead of merging
+   - Addresses Bilibili CDN's IP rotation policy (IPs expire quickly)
+   - Even if old IPs pass ping/HTTP tests, they may not work for actual connections
+   - Fresh IPs fetched on every restart ensures reliable video streaming
+   - Configurable for backward compatibility (defaults to false)
+   - Recommended settings: `validateOnStartup: true`, `replaceMode: true`
+
 ### Current Status
 
 ✅ **Parse Error completely fixed** (variable scope + URL object handling)
 ✅ **Comprehensive debug logging** for future troubleshooting
 ✅ **No chinaz-related errors** or warnings
-✅ **Faster server selection** (88ms vs previous 181ms)
+✅ **Faster server selection** (dual-layer TCP + HTTP testing)
 ✅ **Cleaner startup output**
 ✅ **Simpler, more maintainable codebase**
 ✅ **Clear manual IP update instructions** via nslookup or akamTester
 ✅ **Python akamTester tool integrated** for advanced IP discovery
+✅ **Startup IP validation** ensures fresh IPs on every restart
+✅ **Replace mode** handles Bilibili's rotating CDN IPs effectively
 
-The proxy is now fully functional, production-ready, and optimized for Bilibili's Akamai CDN with comprehensive debugging capabilities.
+The proxy is now fully functional, production-ready, and optimized for Bilibili's Akamai CDN with comprehensive debugging capabilities and automatic IP refresh on startup.
 
 ## Testing and Test Coverage
 
