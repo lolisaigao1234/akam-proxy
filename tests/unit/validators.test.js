@@ -22,6 +22,38 @@ describe('validateConfig', () => {
         expect(result.errors).toContain('config.host must be a non-empty string')
     })
 
+    test('should fail when host is not a string', () => {
+        const config = {
+            host: 123,
+            port: 2689,
+            refreshInterval: 3600
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.host must be a non-empty string')
+    })
+
+    test('should fail when port is missing', () => {
+        const config = {
+            host: 'test.com',
+            refreshInterval: 3600
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.port must be a number')
+    })
+
+    test('should fail when port is not a number', () => {
+        const config = {
+            host: 'test.com',
+            port: '2689',
+            refreshInterval: 3600
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.port must be a number')
+    })
+
     test('should fail when port is out of range', () => {
         const config = {
             host: 'test.com',
@@ -33,6 +65,39 @@ describe('validateConfig', () => {
         expect(result.errors).toContain('config.port must be between 1 and 65535')
     })
 
+    test('should fail when port is 0 (falsy value)', () => {
+        const config = {
+            host: 'test.com',
+            port: 0,
+            refreshInterval: 3600
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        // Port 0 is caught by the falsy check, not range check
+        expect(result.errors).toContain('config.port must be a number')
+    })
+
+    test('should fail when refreshInterval is missing', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.refreshInterval must be a number')
+    })
+
+    test('should fail when refreshInterval is not a number', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: '3600'
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.refreshInterval must be a number')
+    })
+
     test('should fail when refreshInterval is too small', () => {
         const config = {
             host: 'test.com',
@@ -42,6 +107,29 @@ describe('validateConfig', () => {
         const result = validateConfig(config)
         expect(result.valid).toBe(false)
         expect(result.errors).toContain('config.refreshInterval must be at least 60 seconds')
+    })
+
+    test('should fail when verboseDebug is not a boolean', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            verboseDebug: 'true'
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.verboseDebug must be a boolean')
+    })
+
+    test('should pass when verboseDebug is boolean', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            verboseDebug: true
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(true)
     })
 
     test('should validate akamTester configuration', () => {
@@ -61,6 +149,34 @@ describe('validateConfig', () => {
         expect(result.valid).toBe(true)
     })
 
+    test('should fail when akamTester.enabled is not boolean', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                enabled: 'true'
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.enabled must be a boolean')
+    })
+
+    test('should fail when akamTester.interval is not a number', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                interval: '900'
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.interval must be a number')
+    })
+
     test('should fail when akamTester interval is too small', () => {
         const config = {
             host: 'test.com',
@@ -73,6 +189,187 @@ describe('validateConfig', () => {
         const result = validateConfig(config)
         expect(result.valid).toBe(false)
         expect(result.errors).toContain('config.akamTester.interval must be at least 300 seconds (5 minutes)')
+    })
+
+    test('should fail when akamTester.pythonPath is not a string', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                pythonPath: 123
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.pythonPath must be a string')
+    })
+
+    test('should fail when akamTester.condaEnv is not a string or null', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                condaEnv: 123
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.condaEnv must be a string or null')
+    })
+
+    test('should pass when akamTester.condaEnv is null', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                condaEnv: null
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(true)
+    })
+
+    test('should fail when akamTester.scriptPath is not a string', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                scriptPath: 123
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.scriptPath must be a string')
+    })
+
+    test('should fail when akamTester.targetHosts is not an array', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                targetHosts: 'test.com'
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.targetHosts must be an array')
+    })
+
+    test('should fail when akamTester.targetHosts is empty', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                targetHosts: []
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.targetHosts must contain at least one host')
+    })
+
+    test('should fail when akamTester.targetHosts contains non-string', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                targetHosts: ['test.com', 123, 'other.com']
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.targetHosts must contain only strings')
+    })
+
+    test('should fail when akamTester.saveToFile is not boolean', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                saveToFile: 'true'
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.saveToFile must be a boolean')
+    })
+
+    test('should fail when akamTester.timeout is not a number', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                timeout: '600000'
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.timeout must be a number')
+    })
+
+    test('should fail when akamTester.timeout is too small', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                timeout: 30000
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.timeout must be at least 60000ms (1 minute)')
+    })
+
+    test('should fail when akamTester.maxIps is not a number', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                maxIps: '200'
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.maxIps must be a number')
+    })
+
+    test('should fail when akamTester.maxIps is too small', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                maxIps: 5
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.maxIps must be at least 10')
+    })
+
+    test('should fail when akamTester.maxIps is too large', () => {
+        const config = {
+            host: 'test.com',
+            port: 2689,
+            refreshInterval: 3600,
+            akamTester: {
+                maxIps: 2000
+            }
+        }
+        const result = validateConfig(config)
+        expect(result.valid).toBe(false)
+        expect(result.errors).toContain('config.akamTester.maxIps must not exceed 1000')
     })
 })
 
