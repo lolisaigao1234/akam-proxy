@@ -67,19 +67,21 @@ module.exports = (mapper, serverPort) => {
     clientReq.pipe(serverConnection);
 
     clientReq.on('error', (e) => {
-      if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET') {
-        console.log('client disconnected inside clientReq.on: ' + e.message);
-      } else {
-        console.log('client socket error: ' + e);
+      // Silently ignore expected client disconnections (normal behavior)
+      if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET' || e.code === 'EPIPE') {
+        return; // Suppress noise - client closed connection early
       }
+      // Log only unexpected errors
+      console.error('[HTTP] Client request error:', e.code, e.message);
     });
 
     serverConnection.on('error', (e) => {
-      if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET') {
-        console.log('server disconnected: ' + e.message);
-      } else {
-        console.log('server connection error: ' + e);
+      // Silently ignore expected disconnections
+      if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET' || e.code === 'EPIPE') {
+        return; // Suppress noise
       }
+      // Log genuine server errors
+      console.error('[HTTP] Server connection error:', e.code, e.message);
     });
   }
 
@@ -141,22 +143,31 @@ module.exports = (mapper, serverPort) => {
     });
 
     clientSocket.on('error', (e) => {
-      if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET') {
-        console.log("client disconnected inside clientSocket.on: " + e.message);
-      } else {
-        console.log("client socket error: " + e);
+      // Silently ignore expected client disconnections (THIS WAS CAUSING YOUR SPAM!)
+      if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET' || e.code === 'EPIPE') {
+        // Clean up silently - this is normal when clients close tabs/connections
+        if (serverSocket && !serverSocket.destroyed) {
+          serverSocket.destroy();
+        }
+        return; // Suppress log spam
       }
+      // Log only unexpected errors
+      console.error('[HTTPS] Client socket error:', e.code, e.message);
       if (serverSocket && !serverSocket.destroyed) {
         serverSocket.destroy();
       }
     });
 
     serverSocket.on('error', (e) => {
-      if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET') {
-        console.log("server disconnected: " + e.message);
-      } else {
-        console.log("forward proxy server connection error: " + e);
+      // Silently ignore expected disconnections
+      if (e.code === 'ECONNABORTED' || e.code === 'ECONNRESET' || e.code === 'EPIPE' || e.code === 'ETIMEDOUT') {
+        if (clientSocket && !clientSocket.destroyed) {
+          clientSocket.destroy();
+        }
+        return; // Suppress noise
       }
+      // Log genuine server errors
+      console.error('[HTTPS] Server socket error:', e.code, e.message);
       if (clientSocket && !clientSocket.destroyed) {
         clientSocket.destroy();
       }
