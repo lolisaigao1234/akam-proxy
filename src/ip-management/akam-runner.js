@@ -96,8 +96,9 @@ class AkamTesterRunner {
                 }
 
                 const pythonProcess = spawn(command, args, {
-                    windowsHide: true,
-                    shell: true
+                    windowsHide: true
+                    // shell: true removed - not needed and causes DEP0190 warning
+                    // Using shell with args array can lead to command injection
                 });
 
                 let versionOutput = '';
@@ -206,7 +207,8 @@ class AkamTesterRunner {
             // Spawn the process with UTF-8 encoding to handle Chinese characters
             const pythonProcess = spawn(command, args, {
                 cwd: cwd,
-                shell: true,
+                // shell: true removed - not needed and causes DEP0190 warning
+                // Using shell with args array can lead to command injection vulnerabilities
                 windowsHide: true,
                 env: {
                     ...process.env,
