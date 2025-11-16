@@ -15,7 +15,43 @@ module.exports = (domainMap, options) => {
     let matched = false;
     let bestServer = null;
 
-    for (const [pattern, best] of domainMap) {
+    // Handle different domainMap formats (Map vs plain Object)
+    let entries;
+    if (domainMap instanceof Map) {
+        // New format: Map<pattern, bestServer>
+        entries = Array.from(domainMap.entries());
+    } else if (domainMap && typeof domainMap === 'object') {
+        // Check for old format: { host, originalHost }
+        if (domainMap.host && domainMap.originalHost) {
+            // Old single-domain format - map ALL known CDN domains
+            // (Old behavior: single IP for all Bilibili CDN domains)
+            const knownDomains = ['bilivideo.com', 'akamaized.net'];
+
+            // Check if hostname matches originalHost exactly
+            if (hostname === domainMap.originalHost) {
+                matched = true;
+                bestServer = { host: domainMap.host };
+            } else {
+                // Check if hostname contains any known CDN domain
+                for (const domain of knownDomains) {
+                    if (hostname.includes(domain)) {
+                        matched = true;
+                        bestServer = { host: domainMap.host };
+                        break;
+                    }
+                }
+            }
+            entries = []; // Skip iteration below
+        } else {
+            // Plain object with pattern keys: { 'akamaized.net': {...}, ... }
+            entries = Object.entries(domainMap);
+        }
+    } else {
+        entries = [];
+    }
+
+    // Iterate through entries to find matching pattern
+    for (const [pattern, best] of entries) {
         // Check if hostname exactly matches pattern or is a subdomain
         if (hostname === pattern || hostname.endsWith('.' + pattern)) {
             matched = true;
