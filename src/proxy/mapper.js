@@ -1,23 +1,35 @@
-const domains = [
-    'bilivideo.com',
-    'akamaized.net',
-    'upos-hz-mirrorakam.akamaized.net',
-    'upos-sz-mirrorcosov.bilivideo.com',
-];
-
-module.exports = (mapper, options) => {
+/**
+ * Domain-aware proxy mapper
+ * Routes requests to the correct IP based on domain pattern matching
+ *
+ * @param {Map} domainMap - Map of domain patterns to best server objects
+ *                          e.g., Map { 'akamaized.net' => { host: '1.2.3.4', avg: 10 }, ... }
+ * @param {Object} options - Request options { hostname, port }
+ * @returns {Object} Modified options with potentially updated hostname
+ */
+module.exports = (domainMap, options) => {
     const { hostname, port } = options;
-    const result = options;
+    const result = { ...options }; // Clone to avoid mutation
 
-    // Check if the hostname matches any of the domains or their subdomains.
-    const shouldProxy = domains.some(domain => 
-        hostname === domain || hostname.endsWith('.' + domain)
-    );
+    // Try to match hostname to a domain pattern
+    let matched = false;
+    let bestServer = null;
 
-    if (shouldProxy) {
-        result.hostname = mapper.host;
+    for (const [pattern, best] of domainMap) {
+        // Check if hostname exactly matches pattern or is a subdomain
+        if (hostname === pattern || hostname.endsWith('.' + pattern)) {
+            matched = true;
+            bestServer = best;
+            break;
+        }
     }
 
+    // If matched, replace hostname with best server IP
+    if (matched && bestServer && bestServer.host) {
+        result.hostname = bestServer.host;
+    }
+
+    // Log proxy mapping if hostname was changed
     if (hostname !== result.hostname) {
         console.log(`proxy request: ${hostname}:${port} => ${result.hostname}:${result.port}`);
     }
