@@ -950,6 +950,16 @@ This codebase has undergone significant debugging and improvements. The followin
    - Configurable for backward compatibility (defaults to false)
    - Recommended settings: `validateOnStartup: true`, `replaceMode: true`
 
+8. **Shell Injection Security Fix** (November 2025)
+   - Fixed DEP0190 deprecation warning in akam-runner.js
+   - Removed `shell: true` from `spawn()` calls (lines 98 and 207)
+   - **Security vulnerability**: Using `shell: true` with args array can lead to command injection
+   - If `targetHosts` contained shell metacharacters (`;`, `|`, `&`, `$()`), arbitrary commands could be executed
+   - Example attack: `['example.com; rm -rf /']` would delete files after running akamTester
+   - Fix: Removed shell option entirely - not needed for running Python commands
+   - Arguments are now properly passed as array without shell interpretation
+   - Eliminated both the security risk and the deprecation warning
+
 ### Current Status
 
 ✅ **Parse Error completely fixed** (variable scope + URL object handling)
@@ -962,8 +972,9 @@ This codebase has undergone significant debugging and improvements. The followin
 ✅ **Python akamTester tool integrated** for advanced IP discovery
 ✅ **Startup IP validation** ensures fresh IPs on every restart
 ✅ **Replace mode** handles Bilibili's rotating CDN IPs effectively
+✅ **Shell injection vulnerability fixed** (secure child process spawning)
 
-The proxy is now fully functional, production-ready, and optimized for Bilibili's Akamai CDN with comprehensive debugging capabilities and automatic IP refresh on startup.
+The proxy is now fully functional, production-ready, secure, and optimized for Bilibili's Akamai CDN with comprehensive debugging capabilities and automatic IP refresh on startup.
 
 ## Testing and Test Coverage
 
