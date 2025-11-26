@@ -52,7 +52,7 @@
          * 示例: 'AKAMTester'
          * 留空或null表示不使用conda环境
          */
-        condaEnv: 'null',
+        condaEnv: null,
 
         /* akamTester.py脚本路径（相对于项目根目录） */
         scriptPath: 'tools/akamTester/akamTester.py',
